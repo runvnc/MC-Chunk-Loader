@@ -181,7 +181,13 @@ World.prototype.init = function(cb) {
 
     w = this;
     $.get(this.url+'/level.dat', function(data) {
-    
+
+      var inf = '';      
+      inf += 'SpawnX: ' + tagtest(data, 'SpawnX');
+      inf += 'SpawnY: ' + tagtest(data, 'SpawnY');
+      inf += 'SpawnZ: ' + tagtest(data, 'SpawnZ');
+      $('#head').html(inf);
+   
       log(w.url);
       w.chunks = [];
     });  
