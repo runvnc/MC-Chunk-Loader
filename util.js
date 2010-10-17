@@ -29,7 +29,8 @@ function baseConverter (number,ob,nb) {
 
 function stringToBytes ( str ) {
   var ch, st, re = [];
-  for (var i = 0; i < str.length; i++ ) {
+  var ilen = str.length;
+  for (var i = 0; i < ilen; i++ ) {
     ch = str.charCodeAt(i);  // get char
     st = [];                 // set up "stack"
     do {
@@ -37,9 +38,9 @@ function stringToBytes ( str ) {
       ch = ch >> 8;          // shift value down by 1 byte
     }
     while ( ch );
-    //re = re.concat( st.reverse() );
 
-    for (var j=st.length-1; j>=0; j--) {
+    var jlen = st.length - 1;
+    for (var j=jlen; j>=0; j--) {
       re.push(st[j]);
     }
   }
