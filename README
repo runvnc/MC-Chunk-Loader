@@ -1,0 +1,24 @@
+Pre-prototype JavaScript world viewer for Minecraft Alpha files.  
+This is not particularly useful at the moment except for people that 
+may want a starting point for loading MineCraft files in JavaScript.
+The world.js and nbt.js may be explanatory since it is fairly short
+(but crappy, I know).
+
+See files for credits of things I copy-pasted from the internet.
+
+Put on a good web server (VPS) with world/ in same folder. 
+Might work locally, I haven't tried that.
+You will need to put this in the Apache conf (if that is what you are using):
+
+AddEncoding x-gzip .dat
+
+That will make it so the browser decompresses the level files.
+
+Tested with chromium --enable-webgl . Chrome Beta doesn't perform WebGL well for me. 
+Works in webgl enabled browsers http://www.khronos.org/webgl/wiki/Getting_a_WebGL_Implementation .
+
+Please consider making this suck less and posting a link somewhere or forking
+to a less crappy branch.
+
+Thank you.
+
