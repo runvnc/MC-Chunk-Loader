@@ -1,4 +1,4 @@
-//most of this from learningwebgl.com
+///most of this from learningwebgl.com
 
 var canvas;
 var gl;
@@ -238,10 +238,13 @@ function drawScene() {
   
   multMatrix(moonRotationMatrix);
   
-  var d = new Date();
-  mvRotate((d.getTime() - startTime) / 100.0, [0.0, 1.0, 0.0]);
-  
-  
+  if ($('#roton').attr('checked')==true) {
+    var d = new Date();
+    mvRotate((d.getTime() - startTime) / 100.0, [0.0, 1.0, 0.0]); 
+  } else {
+    //log($('#roton').attr('checked'));
+  }
+
   // Draw the square by binding the array buffer to the square's vertices
   // array, setting attributes, and pushing it to GL.
   
