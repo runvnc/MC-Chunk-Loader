@@ -27,15 +27,15 @@ var blockInfo = {
 function convertColors() {
   for (var b in blockInfo) {
     var block = blockInfo[b];
-    if (block.rgba[0]>1 ||
-        block.rgba[1]>1 ||
-        block.rgba[2]>1) {
-
-      for (var n=0;n<3;n++) {
-        block.rgba[n] = block.rgba[n] / 255.0;          
+    if (block.rgba[0] > 1 ||
+    block.rgba[1] > 1 ||
+    block.rgba[2] > 1) {
+    
+      for (var n = 0; n < 3; n++) {
+        block.rgba[n] = block.rgba[n] / 255.0;
       }
       blockInfo[b] = block;
     }
   }
-
+  
 }
