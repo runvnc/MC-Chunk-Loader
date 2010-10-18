@@ -32,18 +32,7 @@ function stringToBytes(str) {
   var ch, st, re = [];
   var ilen = str.length;
   for (var i = 0; i < ilen; i++) {
-    ch = str.charCodeAt(i); // get char
-    st = []; // set up "stack"
-    do {
-      st.push(ch & 0xFF); // push byte to stack
-      ch = ch >> 8; // shift value down by 1 byte
-    }
-    while (ch);
-    
-    var jlen = st.length - 1;
-    for (var j = jlen; j >= 0; j--) {
-      re.push(st[j]);
-    }
+    re.push(str.charCodeAt(i)); // get char
   }
   // return an array of bytes
   return re;

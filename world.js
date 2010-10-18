@@ -64,14 +64,15 @@ function transNeighbors(blocks, x, y, z) {
   return false;
 }
 
-function extractChunk(blocks, chunk) {
+function extractChunk(blocks, chunk, lighting) {
   chunk.vertices = [];
   chunk.colors = [];
   
   for (x = 0; x < ChunkSizeX; x++) {
     for (z = 0; z < ChunkSizeZ; z++) {
       for (y = ymin; y < ChunkSizeY; y++) {
-        var blockID = blocks[y + (z * ChunkSizeY + (x * ChunkSizeY * ChunkSizeZ))];
+        var blockInfoOffset = y + (z * ChunkSizeY + (x * ChunkSizeY * ChunkSizeZ));
+        var blockID = blocks[blockInfoOffset];
         var blockType = blockInfo['_-1'];
         blockID = '_' + blockID.toString();
         
@@ -79,7 +80,6 @@ function extractChunk(blocks, chunk) {
           blockType = blockInfo[blockID];
         }
         else {
-        
           blockType = blockInfo['_-1'];
           log('unknown block type ' + blockID);
         }
@@ -87,19 +87,86 @@ function extractChunk(blocks, chunk) {
         
         //if ((y>64) & blockType.id ===1) 
         //  show = true;
-        if (blockType.id != 0) show = transNeighbors(blocks, x, y, z);
-        
-        var xmod = (minx + (maxx - minx) / 2.0) * ChunkSizeX;
-        var zmod = (minz + (maxz - minz) / 2.0) * ChunkSizeZ;
+        if (blockType.id != 0) {
+          show = transNeighbors(blocks, x, y, z);
+        }
         
         if (show) {
+          var xmod = (minx + (maxx - minx) / 2.0) * ChunkSizeX;
+          var zmod = (minz + (maxz - minz) / 2.0) * ChunkSizeZ;
+          
+          var skyLight = lighting[0][Math.floor((blockInfoOffset) / 2)];
+          var blockLight = lighting[1][Math.floor((blockInfoOffset) / 2)];
+
+          if (blockInfoOffset % 2 !== 0) {
+            skyLight = (skyLight & 0xF0) >> 4;
+            blockLight = (blockLight & 0xF0) >> 4;
+          } else {
+            skyLight = skyLight & 0x0F;
+            blockLight = blockLight & 0x0F;
+          }
+            
+          skyLight = skyLight / 16.0;
+          blockLight = blockLight / 16.0;
+          var lightlevel = Math.max(skyLight, blockLight);
+          if (lightlevel === 0) {
+            lightlevel = 0.3;
+	  }
+          
+
+	  // Some ugly cut&paste code, to get basic quads to try lighting on
           theworld.vertices.push(((-1 * xmod) + x + (chunk.pos.x) * ChunkSizeX * 1.00000) / 30.00);
           theworld.vertices.push(((y + 1) * 1.0) / 30.0);
           theworld.vertices.push(((-1 * zmod) + z + (chunk.pos.z) * ChunkSizeZ * 1.00000) / 30.00);
           
-          theworld.colors.push(blockType.rgba[0]);
-          theworld.colors.push(blockType.rgba[1]);
-          theworld.colors.push(blockType.rgba[2]);
+          theworld.vertices.push(((-1 * xmod) + (x + 1) + (chunk.pos.x) * ChunkSizeX * 1.00000) / 30.00);
+          theworld.vertices.push(((y + 1) * 1.0) / 30.0);
+          theworld.vertices.push(((-1 * zmod) + z + (chunk.pos.z) * ChunkSizeZ * 1.00000) / 30.00);
+          
+          theworld.vertices.push(((-1 * xmod) + (x + 1) + (chunk.pos.x) * ChunkSizeX * 1.00000) / 30.00);
+          theworld.vertices.push(((y + 1) * 1.0) / 30.0);
+          theworld.vertices.push(((-1 * zmod) + (z + 1) + (chunk.pos.z) * ChunkSizeZ * 1.00000) / 30.00);
+          
+          theworld.vertices.push(((-1 * xmod) + x + (chunk.pos.x) * ChunkSizeX * 1.00000) / 30.00);
+          theworld.vertices.push(((y + 1) * 1.0) / 30.0);
+          theworld.vertices.push(((-1 * zmod) + z + (chunk.pos.z) * ChunkSizeZ * 1.00000) / 30.00);
+          
+          theworld.vertices.push(((-1 * xmod) + x + (chunk.pos.x) * ChunkSizeX * 1.00000) / 30.00);
+          theworld.vertices.push(((y + 1) * 1.0) / 30.0);
+          theworld.vertices.push(((-1 * zmod) + (z + 1) + (chunk.pos.z) * ChunkSizeZ * 1.00000) / 30.00);
+          
+          theworld.vertices.push(((-1 * xmod) + (x + 1) + (chunk.pos.x) * ChunkSizeX * 1.00000) / 30.00);
+          theworld.vertices.push(((y + 1) * 1.0) / 30.0);
+          theworld.vertices.push(((-1 * zmod) + (z + 1) + (chunk.pos.z) * ChunkSizeZ * 1.00000) / 30.00);
+          
+          theworld.colors.push(blockType.rgba[0] * lightlevel);
+          theworld.colors.push(blockType.rgba[1] * lightlevel);
+          theworld.colors.push(blockType.rgba[2] * lightlevel);
+          theworld.colors.push(blockType.rgba[3]);
+          
+          theworld.colors.push(blockType.rgba[0] * lightlevel);
+          theworld.colors.push(blockType.rgba[1] * lightlevel);
+          theworld.colors.push(blockType.rgba[2] * lightlevel);
+          theworld.colors.push(blockType.rgba[3]);
+          
+          theworld.colors.push(blockType.rgba[0] * lightlevel);
+          theworld.colors.push(blockType.rgba[1] * lightlevel);
+          theworld.colors.push(blockType.rgba[2] * lightlevel);
+          theworld.colors.push(blockType.rgba[3]);
+          
+          theworld.colors.push(blockType.rgba[0] * lightlevel);
+          theworld.colors.push(blockType.rgba[1] * lightlevel);
+          theworld.colors.push(blockType.rgba[2] * lightlevel);
+          theworld.colors.push(blockType.rgba[3]);
+          
+          theworld.colors.push(blockType.rgba[0] * lightlevel);
+          theworld.colors.push(blockType.rgba[1] * lightlevel);
+          theworld.colors.push(blockType.rgba[2] * lightlevel);
+          theworld.colors.push(blockType.rgba[3]);
+          
+          theworld.colors.push(blockType.rgba[0] * lightlevel);
+          theworld.colors.push(blockType.rgba[1] * lightlevel);
+          theworld.colors.push(blockType.rgba[2] * lightlevel);
           theworld.colors.push(blockType.rgba[3]);
         }
         
@@ -107,15 +174,18 @@ function extractChunk(blocks, chunk) {
     } // z
   } // x 
   //log(JSON.stringify(chunk.vertices)); 
+
   countChunks++;
 }
 
 
 function parsechunk(data, pos) {
   var blocks = tagfixed(data, 'Blocks', 32768);
+  var skyLights = tagfixed(data, 'SkyLight', 16384);
+  var blockLights = tagfixed(data, 'BlockLight', 16384);
   var c = Object();
   c.pos = pos;
-  extractChunk(blocks, c);
+  extractChunk(blocks, c, [skyLights, blockLights]);
   theworld.chunks.push(c);
   return c;
 }

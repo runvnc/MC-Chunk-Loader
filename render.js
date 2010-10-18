@@ -1,4 +1,4 @@
-///most of this from learningwebgl.com
+//most of this from learningwebgl.com
 
 var canvas;
 var gl;
@@ -260,7 +260,7 @@ function drawScene() {
   
   setMatrixUniforms();
   
-  gl.drawArrays(gl.POINTS, 0, vertsl / 3);
+  gl.drawArrays(gl.TRIANGLES, 0, vertsl / 3);
   
   
   //  gl.getError();
