@@ -219,7 +219,7 @@ function drawScene() {
   
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   
-  perspectiveMatrix = makePerspective(45, 1200.0 / 900.0, 0.01, 3000.0);
+  perspectiveMatrix = makePerspective(45, 1000.0 / 700.0, 0.01, 3000.0);
   
   // Set the drawing position to the "identity" point, which is
   // the center of the scene.

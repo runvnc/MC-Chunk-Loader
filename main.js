@@ -1,12 +1,10 @@
 var viewer;
 
 function main() {
-  viewer = new Viewer(window.location + 'world');
+  viewer = new Viewer(window.location);
   
   $(document).keydown(function(event) {
-    console.log(event.keyCode);
     if (event.keyCode == '87') {
-      console.log('attempting move');
       posMatrix = posMatrix.x(Matrix.Translation($V([0.0, 0.0, 0.1])).ensure4x4());
     }
   });

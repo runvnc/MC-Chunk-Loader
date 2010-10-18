@@ -18,7 +18,7 @@ var ymin = 5;
 function b36(n) {
   var r = "";
   
-  if (n == 0) 
+  if (n === 0) 
     r = '0';
   else 
     if (n < 1) 
@@ -30,7 +30,8 @@ function b36(n) {
 }
 
 function posfolder(pos) {
-  r = b36(pos.mod(64));
+  var n = new Number(pos);
+  r = b36(n.mod(64));
   return r;
 }
 
@@ -39,7 +40,14 @@ function chunkfilename(x, z) {
 }
 
 function chunkfile(x, z) {
-  return posfolder(x) + '/' + posfolder(z) + '/' + chunkfilename(x, z);
+  //return posfolder(x) + '/' + posfolder(z) + '/' + chunkfilename(x, z);
+  for (var i=0; i< theworld.chunkIndex.length; i++) {
+    var ch = theworld.chunkIndex[i];
+    var dat = ch.dat;
+    if (i<4) log(JSON.stringify(dat));
+    if (dat['xpos']==x && dat['zpos']==z) return ch.filename;
+  }
+  return 'unindexed';
 }
 
 function transNeighbors(blocks, x, y, z) {
@@ -114,19 +122,23 @@ function parsechunk(data, pos) {
 
 function chunkload(url, pos, callback) {
   log('loading chunk pos=' + JSON.stringify(pos));
-  log(chunkfile(pos.x, pos.z));
-  var loc = url + '/' + chunkfile(pos.x, pos.z);
-  $.ajax({
-    url: loc,
-    dataType: 'html',
-    type: 'GET',
-    success: function(data) {
-      callback(theworld, parsechunk(data, pos));
-    },
-    error: function() {
-      callback(theworld, null);
-    }
-  });
+  var fl = chunkfile(pos.x, pos.z);
+  if (fl != 'unindexed') {
+          var loc = url + '/' + fl;
+          $.ajax({
+            url: loc,
+            dataType: 'html',
+            type: 'GET',
+            success: function(data) {
+              callback(theworld, parsechunk(data, pos));
+            },
+            error: function() {
+              callback(theworld, null);
+            }
+          });
+  } else {
+    callback(theworld, null);
+  }
 }
 
 
@@ -169,9 +181,10 @@ function loadArea() {
 }
 
 
-function World(url) {
+function World(url, index) {
   this.url = url;
   this.chunks = [];
+  this.indexLocation = index;
 }
 
 World.prototype.init = function(cb) {
@@ -187,13 +200,13 @@ World.prototype.init = function(cb) {
   convertColors(); // in blockinfo.js
   w = this;
   $.get(this.url + '/level.dat', function(data) {
-  
-    var inf = '';
-    inf += 'SpawnX: ' + tagtest(data, 'SpawnX');
-    inf += 'SpawnY: ' + tagtest(data, 'SpawnY');
-    inf += 'SpawnZ: ' + tagtest(data, 'SpawnZ');
-    $('#head').html(inf);
-    
+    status('Loading chunk index..');
+    $.get(w.indexLocation, function(ind) {
+      status('Index has ' + ind.length + ' chunks');
+      w.chunkIndex = ind;
+      //log(JSON.stringify(w.chunkIndex));
+    });
+ 
     log(w.url);
     w.chunks = [];
   });
