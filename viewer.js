@@ -7,12 +7,12 @@ function Viewer(url) {
   this.url = url;
   this.world = null;
 }
- 
+
 Viewer.prototype.loaded = function() {
-    this.world.loadArea();    
+  this.world.loadArea();
 }
 
-Viewer.prototype.init = function() { 
-    this.world = new World(this.url);
-    this.world.init(this.loaded);
+Viewer.prototype.init = function() {
+  this.world = new World(this.url);
+  this.world.init(this.loaded);
 };
