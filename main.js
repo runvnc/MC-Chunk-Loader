@@ -23,9 +23,9 @@ function main() {
 }
 
 window.onload = function() {
-  document.onselectstart = function() {
-    return false;
-  } // ie
+  //document.onselectstart = function() {
+  // / return false;
+  //} // ie
   //document.onmousedown = function() {return false;} // mozilla
 };
 

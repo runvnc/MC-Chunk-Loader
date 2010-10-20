@@ -10,6 +10,9 @@ function get_ms1bit(/*int*/ $i)
 
 function readint($str, $name) {
   $pos = strpos($str, $name);
+
+  if ($pos === false) return -1;
+
   $datx = substr($str, $pos+4, 4);
 
   $dat = unpack('C*', $datx);
@@ -19,8 +22,6 @@ function readint($str, $name) {
   else
     $isnegative = false;
   
-  //echo 'isnegative = ' . $isnegative . "\r\n";
-
   $Number = ($dat[1]<<24) | ($dat[2]<<16) | ($dat[3]<<8) | ($dat[4]);
 
   if ($isnegative) {
@@ -38,6 +39,14 @@ function readchunk($path) {
   $ret = array();
   $ret['xpos'] = readint($contents,'xPos');
   $ret['zpos'] = readint($contents,'zPos');
+
+  if (file_exists($path.'.gz')) unlink($path.'.gz');
+  if (file_exists($path.'.b6z')) unlink($path.'.b6z');
+
+  $b64 = base64_encode($contents);
+  $zd2 = gzopen($path.'.b6z', 'wb');
+  gzwrite($zd2, $b64);
+  gzclose($zd2); 
 
   return $ret;
 }

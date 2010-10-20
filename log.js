@@ -3,7 +3,7 @@ function log(s) {
 }
 
 function msg(s) {
-  $('#trace').append('<p>' + s);
+  $('#trace').append('<div>' + s + '</div>');
 }
 
 

@@ -14,7 +14,7 @@
             $list = array_merge($list, process_dir($path, TRUE));
           } else {
             $entry = array('filename' => $file);
-
+            
  //---------------------------------------------------------//
  //                     - SECTION 1 -                       //
  //          Actions to be performed on ALL ITEMS           //
@@ -30,11 +30,17 @@
  //-----------------    Begin Editable    ------------------//
 
   //$entry['size'] = filesize($path);
-
-  $entry['filename'] = trimpath($path);
-
+  
+  $pos = strpos($path, '.b6z');
+  $pos2 = strpos($path, '.gz');
+  if ($pos >0 | $pos2>0) {
+    unlink($path);
+    continue;
+  } 
+  
   $entry['dat'] = readchunk($path);
-   
+     
+  $entry['filename'] = trimpath($path) . '.b6z';
    
  //-----------------     End Editable     ------------------//
               break;
@@ -55,11 +61,21 @@
       return $list;
     } else return FALSE;
   }
+ 
+  $wf = $_SERVER['SCRIPT_FILENAME'];
+  $pos = strrpos($wf, '/');
+  $wd = substr($wf, 0, $pos);  
 
-  $result = process_dir(getcwd() . '/world', TRUE);
+  if (file_exists($wd.'/chunks.json')) {
+    $result = file_get_contents($wd.'/chunks.json');
+  } else {
+    $result = json_encode(process_dir($wd . '/world', TRUE));
+    
+    file_put_contents($wd.'/chunks.json', $result);
+  }
   header('Cache-Control: no-cache, must-revalidate');
   header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
   header('Content-type: application/json');  
-  echo json_encode($result); 
+  echo $result; 
 
 ?>

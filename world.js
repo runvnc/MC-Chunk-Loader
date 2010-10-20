@@ -51,8 +51,8 @@ function chunkfile(x, z) {
 }
 
 function transNeighbors(blocks, x, y, z) {
-  for (i = x - 1; i < x + 2 & i < ChunkSizeX; i++) 
-    for (j = y - 1; j < y + 2; j++) 
+  for (i = x - 1; i < x + 2 & i < ChunkSizeX; i++) {
+    for (j = y - 1; j < y + 2; j++) {
       for (k = z - 1; k < z + 2 & k < ChunkSizeZ; k++) {
         if (!(i == x && j == y && k == z)) {
           var index = j + (k * ChunkSizeY + (i * ChunkSizeY * ChunkSizeZ));
@@ -61,6 +61,8 @@ function transNeighbors(blocks, x, y, z) {
             return true;
         }
       }
+    }
+  }
   return false;
 }
 
@@ -74,7 +76,7 @@ function extractChunk(blocks, chunk) {
         var blockID = blocks[y + (z * ChunkSizeY + (x * ChunkSizeY * ChunkSizeZ))];
         var blockType = blockInfo['_-1'];
         blockID = '_' + blockID.toString();
-        
+         
         if (blockInfo[blockID]) {
           blockType = blockInfo[blockID];
         }
@@ -87,7 +89,7 @@ function extractChunk(blocks, chunk) {
         
         //if ((y>64) & blockType.id ===1) 
         //  show = true;
-        if (blockType.id != 0) show = transNeighbors(blocks, x, y, z);
+        if (blockType.id !== 0) show = transNeighbors(blocks, x, y, z);
         
         var xmod = (minx + (maxx - minx) / 2.0) * ChunkSizeX;
         var zmod = (minz + (maxz - minz) / 2.0) * ChunkSizeZ;
@@ -168,7 +170,7 @@ function loadArea() {
   
   chunkload(theworld.url, theworld.pos, function(chunk) {
     var c = theworld.chunks[0];
-    if (countChunks % 2 == 0) status('loaded chunk at ' + theworld.pos.x + ', ' + theworld.pos.z);
+    if (countChunks % 2 === 0) status('loaded chunk at ' + theworld.pos.x + ', ' + theworld.pos.z);
     theworld.pos = nextChunk(theworld.pos);
     if (theworld.pos.cont) {
       theworld.loadArea();
@@ -199,16 +201,29 @@ World.prototype.init = function(cb) {
   
   convertColors(); // in blockinfo.js
   w = this;
-  $.get(this.url + '/level.dat', function(data) {
-    status('Loading chunk index..');
-    $.get(w.indexLocation, function(ind) {
-      status('Index has ' + ind.length + ' chunks');
-      w.chunkIndex = ind;
-      //log(JSON.stringify(w.chunkIndex));
+  status("Loading chunk index..");
+  $.get(w.indexLocation, function(ind) {
+    w.chunkIndex = ind;
+    status('Index has ' + ind.length + ' chunks');
+    $.get(w.url + '/level.dat.b6z', function(data) {
+      msg("Loaded level .dat base 64 encoded.");
+      msg(data);
+      var b64reader = new Base64Reader(data);
+      var arr = new Array();
+      do {
+        byt = b64reader.readByte();
+        if (byt>=0) arr.push(byt);
+      } while (byt>=0);
+
+      msg(JSON.stringify(arr));
+
+      w.spawnPos = [tagfixed(data, 'SpawnX', 4), 
+                  tagfixed(data, 'SpawnY', 4),
+                  tagfixed(data, 'SpawnZ',4 )];
+      msg(JSON.stringify(w.spawnPos));
+      log(w.url);
+      w.chunks = [];
     });
- 
-    log(w.url);
-    w.chunks = [];
   });
 };
 

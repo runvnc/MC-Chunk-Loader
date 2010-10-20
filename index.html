@@ -1,14 +1,31 @@
 <html>
 <head>
 <title>MC Chunk Loader version -0.1</title>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
 </head>
 <body>
 <style type="text/css">
 body, p, span, td, div {
   font-family: Georgia, "Times New Roman", sans-serif;
   color: #fff;
+  /* cursor: pointer; */
   background-color: #000;
-  cursor: pointer;
+}
+
+
+#trace {
+  float: right;
+  width: 350px;
+  height: 200px;
+  overflow: auto;
+  border: 1px dotted gray;
+  white-space: pre-wrap;
+  font-family: 'Lucida Grande', 'Lucida Sans Unicode', Terminal, sans-serif;
+  word-wrap: break-word;
+  font-size: 9pt;
+  position: relative;
+  z-index: 100;
+  background-color: transparent;
 }
 </style>
 
@@ -54,6 +71,7 @@ void main(void) {
 
 
 <div id="msg"></div>
+<div id="trace"></div>
 
 x min: <input type="number" id="xmin" name="xmin" size="3" value="-8">  z min: <input type="number" id="zmin" name="zmin" value="-8" size="3">
 x max: <input type="number" name="xmax" id="xmax" value="8" size="3">  z max: <input type="number" name="zmax" id="zmax" value="8" size="3">
@@ -66,6 +84,7 @@ y min: <input type="number" name="ymin" id="ymin" value="50" size="3">
 </canvas>
 
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="deflate.js"></script>
 <script type="text/javascript" src="util.js"></script>
 <script type="text/javascript" src="log.js"></script>
 <script type="text/javascript" src="blockinfo.js"></script>

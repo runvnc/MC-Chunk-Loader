@@ -15,6 +15,6 @@ Viewer.prototype.loaded = function() {
 
 
 Viewer.prototype.init = function() {
-  this.world = new World(this.url + '/world', this.url + '/buildindex.php');
+  this.world = new World(this.url + 'world', this.url + 'buildindex.php');
   this.world.init(this.loaded);
 };
