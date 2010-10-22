@@ -27,9 +27,43 @@ test("-435.mod(64)", function() {
   equals(13, value, "Expected 13");
 });
 
-test("folder name -435", function() {
-  var value = posfolder(-435);
-  equals(value,'13', 'd');
+test("NBT readBytes 1", function() {
+  var value = [0];
+  var tagReader = new NBTReader(value);
+  equals(tagReader.readBytes(1),0);
+});
+
+test("get_ms1bit(254)", function() {
+  equals(get_ms1bit(254), 128);
+});
+
+test("makesigned(254)", function() {
+  var value = makeSigned(254);
+  equals(value, -2,"");
+});
+
+test("makeshort(0 1)", function() {
+  var arr = [0, 1];
+  var value = makeshort(arr);
+  equals(value,1, "");
+});
+
+test("makeshort(0 254)", function() {
+  var arr = [0, 254];
+  var value = makeshort(arr);
+  equals(value, -2);
+});
+
+test("TAG_String read()", function() {
+  var tagReader = new NBTReader([8, 0, 4, 68, 97, 116, 97]);
+  tagReader.read();
+  
+});
+
+test("TAG_String Data", function() {
+  var tagReader = new NBTReader([8, 0, 4, 68, 97, 116, 97]); 
+  var value = tagReader.read();
+  equals(value, 'Data', '' );
 });
 
 });

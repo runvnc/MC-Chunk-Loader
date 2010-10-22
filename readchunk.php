@@ -1,4 +1,5 @@
 <?php
+ini_set('display_errors', true);
 
 /* return the value of the most significant bit */
 function get_ms1bit(/*int*/ $i)
@@ -40,16 +41,31 @@ function readchunk($path) {
   $ret['xpos'] = readint($contents,'xPos');
   $ret['zpos'] = readint($contents,'zPos');
 
-  if (file_exists($path.'.gz')) unlink($path.'.gz');
-  if (file_exists($path.'.b6z')) unlink($path.'.b6z');
-
-  $b64 = base64_encode($contents);
-  $zd2 = gzopen($path.'.b6z', 'wb');
-  gzwrite($zd2, $b64);
-  gzclose($zd2); 
-
   return $ret;
 }
+
+function jsonchunkout($path) {
+  if (false & file_exists($path.'.json.gz')) {
+    echo file_get_contents($path.'.json.gz');
+    return true;
+  } else {
+    $zd = gzopen($path, "r");
+    $contents = gzread($zd, 9990000);
+    gzclose($zd);
+    
+    $json = json_encode(array_merge(unpack("C*", $contents)));
+    $gz = gzencode($json);
+
+    $zd2 = fopen($path.'.json.gz', 'wb');    
+    fwrite($zd2, $gz);
+    fclose($zd2);
+    
+    echo $gz;
+
+    return true;
+  }
+}
+
 
 //if ($argv[1]) {
 // echo 'reading chunk ' . $argv[1] . "\r\n";

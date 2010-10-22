@@ -5,25 +5,29 @@
 </head>
 <body>
 <style type="text/css">
+@font-face { font-family: Monaco; src: url('MONACO.TTF'); }
+
 body, p, span, td, div {
-  font-family: Georgia, "Times New Roman", sans-serif;
+  font-family: Monaco, sans-serif;
   color: #fff;
   /* cursor: pointer; */
+  font-size: 10pt;
   background-color: #000;
 }
 
 
 #trace {
   float: right;
+  position: fixed;
+  right: 1px;
+  top: 10px;
   width: 350px;
   height: 200px;
-  overflow: auto;
-  border: 1px dotted gray;
+  overflow: hidden;
   white-space: pre-wrap;
-  font-family: 'Lucida Grande', 'Lucida Sans Unicode', Terminal, sans-serif;
+  /* font-family: Terminal, sans-serif; */
   word-wrap: break-word;
-  font-size: 9pt;
-  position: relative;
+  font-size: 7pt;
   z-index: 100;
   background-color: transparent;
 }

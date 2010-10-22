@@ -1,4 +1,5 @@
 <?php
+ini_set('memory_limit', '128M');
   require_once('readchunk.php');
 
   function trimpath($p) {
@@ -40,7 +41,7 @@
   
   $entry['dat'] = readchunk($path);
      
-  $entry['filename'] = trimpath($path) . '.b6z';
+  $entry['filename'] = trimpath($path);
    
  //-----------------     End Editable     ------------------//
               break;

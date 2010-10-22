@@ -205,23 +205,12 @@ World.prototype.init = function(cb) {
   $.get(w.indexLocation, function(ind) {
     w.chunkIndex = ind;
     status('Index has ' + ind.length + ' chunks');
-    $.get(w.url + '/level.dat.b6z', function(data) {
-      msg("Loaded level .dat base 64 encoded.");
-      msg(data);
-      var b64reader = new Base64Reader(data);
-      var arr = new Array();
-      do {
-        byt = b64reader.readByte();
-        if (byt>=0) arr.push(byt);
-      } while (byt>=0);
+    $.get('getlevel.php', function(data) {
+      msg("Loaded level.dat");
+     
+      w.nbt = new NBT();
+      w.level = w.nbt.read(data);
 
-      msg(JSON.stringify(arr));
-
-      w.spawnPos = [tagfixed(data, 'SpawnX', 4), 
-                  tagfixed(data, 'SpawnY', 4),
-                  tagfixed(data, 'SpawnZ',4 )];
-      msg(JSON.stringify(w.spawnPos));
-      log(w.url);
       w.chunks = [];
     });
   });

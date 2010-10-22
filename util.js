@@ -102,7 +102,47 @@ function stringToBytes(str) {
   return re;
 }
 
+function get_ms1bit(i)
+{
+    var x = 0;
+    for (var j = i; i && !(j == 1); j >>= 1) { x++; }
+    return i ? j <<= x: 0;
+}
 
+/*
+function checkBit(value,n,bits)
+{
+    var value = value;
+    if(value & (1<<(bits-n))) { return true; }
+    else { return false; }
+} */
+
+function makeSigned(n) {
+  var isNegative = get_ms1bit(n) == 128;
+  if (!isNegative) {
+    return n;
+  } else {
+    //var n2 = ~n;
+    //return n2 + 1;
+    return -(Math.pow(2, 8) - n);
+  }
+}
+
+function ByteReader(arr) {
+  this.bytes = arr;
+  this.position = 0;
+
+  this.readByte = function() {
+    
+    if (this.position == this.bytes.length) {
+  
+      return -1;
+    } else {
+      return this.bytes[this.position++];
+    }
+
+  }
+}
 
 function getIntAt(arr, offs) {
   return (arr[offs + 0] << 24) +

@@ -4,6 +4,7 @@ function log(s) {
 
 function msg(s) {
   $('#trace').append('<div>' + s + '</div>');
+  $('#trace')[0].scrollTop = $('#trace')[0].scrollHeight;
 }
 
 
