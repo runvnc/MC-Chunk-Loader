@@ -23,7 +23,6 @@ function TAG(nbtreader) {
     this.bytes = this.reader.readBytes(this.byteCount);
     return this.decode();
   };
-
 }
 
 
@@ -34,13 +33,36 @@ function readName() {
 }
 
 function TAG_End(nbtreader) {
-  this.byteCount = 1;
-  this.init(nbtreader);
+  this.readName = function() {
+    return 'END';
+  };
+
+  this.read = function() {
+    return 0;
+  };  
+}
+
+function TAG_Unknown(nbtreader) {
+  this.readName = readName;
+  this.read = function() { 
+    return 'unknown tag type';
+  };
 }
 
 function TAG_Int(nbtreader) {
-  this.byteCount = 4;
-  this.init(nbtreader);
+  
+  this.read = function() {
+    this.bytes = nbtreader.readBytes(4);
+    return this.decode();
+  };
+
+  this.decode = function() {
+    var num = (this.bytes[0]<<24) | (this.bytes[1]<<16) | (this.bytes[2]<<8) | (this.bytes[3]);
+    num = makeSigned(num, 64);
+    return num;
+  };
+
+   this.reader = nbtreader;
 }
 
 function TAG_Short(nbtreader) {
@@ -61,10 +83,14 @@ function makeshort(bytes) {
 function TAG_String(nbtreader) {
 
   this.read = function() {
-    var shortBytes = nbtreader.readBytes(2);
+    var shortBytes = this.reader.readBytes(2);
     this.byteCount = makeshort(shortBytes);
-    this.bytes = this.reader.readBytes(this.byteCount);
-    return this.decode();
+    if (this.byteCount === 0 ) {
+      return "";
+    } else {
+      this.bytes = this.reader.readBytes(this.byteCount);
+      return this.decode();
+    }
   };
   
   this.decode = function() {
@@ -72,6 +98,7 @@ function TAG_String(nbtreader) {
     var translator = new Utf8Translator(bytereader);   
     var str = "";
     var ch = 1;
+    
     do {
       ch = translator.readChar();
       if (ch) str += ch;
@@ -99,9 +126,17 @@ function TAG_Long(nbtreader) {
 }
 
 function TAG_Compound(nbtreader) {
-
+  this.reader = nbtreader;
+  var i = 0;
   this.read = function() {
-
+    var arr = []; 
+    var tag = null;
+    do {
+      tag = this.reader.read();
+      arr.push(tag);
+      i++;
+    } while (!tag['END'] && i<100);
+    return arr;    
   };
 
   this.decode = function() {
@@ -114,14 +149,13 @@ TAG_Short.prototype.readName = readName;
 TAG_Int.prototype.readName = readName;
 TAG_Long.prototype.readName = readName;
 TAG_End.prototype.readName = readName;
-
+TAG_Compound.prototype.readName = readName;
 
 function NBTReader(data) {
   this.position = 0;
   this.data = data;
   
   this.read = function() {
-
     var type = this.readBytes(1);
     
     var typeStr = '_'+type.toString();
@@ -144,30 +178,31 @@ function NBTReader(data) {
       case 'TAG_Long':
         tag = new TAG_Long(this);
         break;
-      case 'TAG_Float':
-        tag = new TAG_Float(this);
-        break;
-      case 'TAG_Double':
-        tag = new TAG_Double(this);
-        break;
-      case 'TAG_Byte_Array':
-        tag = new TAG_Byte_Array(this);
-        break;
+      //case 'TAG_Float':
+      //  tag = new TAG_Float(this);
+      //  break;
+      //case 'TAG_Double':
+      //  tag = new TAG_Double(this);
+      //  break;
+      //case 'TAG_Byte_Array':
+      //  tag = new TAG_Byte_Array(this);
+      //  break;
       case 'TAG_String':
         tag = new TAG_String(this);
         break;
-      case 'TAG_List':
-        tag = new TAG_List(this);
-        break;
+      //case 'TAG_List':
+      //  tag = new TAG_List(this);
+      //  break;
       case 'TAG_Compound':
         tag = new TAG_Compound(this);
         break;
-      default:
+      default:  
+        tag = new TAG_Unknown(this);
         break;
     }
     var ret = new Object();
-    var name = tag.readName();
-    ret[name] = tag.read();
+    var name2 = tag.readName();
+    ret[name2] = tag.read();
     return ret;
   };
 

@@ -105,7 +105,8 @@ function stringToBytes(str) {
 function get_ms1bit(i)
 {
     var x = 0;
-    for (var j = i; i && !(j == 1); j >>= 1) { x++; }
+    var l = 0;
+    for (var j = i; i && !(j == 1) && l<20000; j >>= 1) { x++; l++; }
     return i ? j <<= x: 0;
 }
 

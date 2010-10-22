@@ -61,5 +61,17 @@ test("TAG_Long", function() {
   equals(value.Time,1206336);
 });
 
+test("TAG_Compound", function() {
+//  var data = 
+});
+
+
+$.get('getlevel.php', function(data) {
+  var arr = JSON.parse(data);
+  var nbtreader = new NBTReader(arr);
+  $(document).append(JSON.stringify(nbtreader.read()));
+
+});
+
 });
 
