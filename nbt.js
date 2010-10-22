@@ -19,21 +19,18 @@ function TAG(nbtreader) {
 
   this.reader = nbtreader;
 
-  this.init = function(nbt) {
-    this.reader = nbt;
-  };
-
   this.read = function() {
     this.bytes = this.reader.readBytes(this.byteCount);
     return this.decode();
   };
 
-  this.readName = function() {
-    var tagName = new TAG_String(this.reader, true);
-    this.name = tagName.read();
-  }
+}
 
-  this.init();
+
+function readName() {
+    var tagName = new TAG_String(this.reader);
+    this.name = tagName.read();
+    return this.name;
 }
 
 function TAG_End(nbtreader) {
@@ -87,13 +84,13 @@ function TAG_String(nbtreader) {
 
 function TAG_Long(nbtreader) {
   this.read = function() {
-    var longBytes = nbtreader.readBytes(8);
+    this.bytes = nbtreader.readBytes(8);
     return this.decode();
   };
 
   this.decode = function() {
-    var num = (bytes[0]<<56) | (bytes[1]<<48) | (bytes[2]<<40) + (bytes[3]<<32) |
-              (bytes[4]<<24) | (bytes[5]<<16) | (bytes[6]<<8) | bytes[7];
+    var num = (this.bytes[0]<<56) | (this.bytes[1]<<48) | (this.bytes[2]<<40) | (this.bytes[3]<<32) |
+              (this.bytes[4]<<24) | (this.bytes[5]<<16) | (this.bytes[6]<<8) | (this.bytes[7]);
     num = makeSigned(num, 64);
     return num;
   };
@@ -112,10 +109,11 @@ function TAG_Compound(nbtreader) {
   };
 }
 
-TAG_String.prototype.init = TAG.init;
-TAG_Short.prototype.init = TAG.init;
-TAG_Int.prototype.init = TAG.init;
-TAG_End.prototype.init = TAG.init;
+TAG_String.prototype.readName = readName;
+TAG_Short.prototype.readName = readName;
+TAG_Int.prototype.readName = readName;
+TAG_Long.prototype.readName = readName;
+TAG_End.prototype.readName = readName;
 
 
 function NBTReader(data) {
@@ -167,8 +165,10 @@ function NBTReader(data) {
       default:
         break;
     }
- 
-    return tag.read(); 
+    var ret = new Object();
+    var name = tag.readName();
+    ret[name] = tag.read();
+    return ret;
   };
 
   this.readBytes = function(count) {
