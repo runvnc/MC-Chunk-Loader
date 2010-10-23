@@ -13,11 +13,6 @@ function Viewer(url) {
   
   this.showData = function(name, data, typ) {
     if (!typ) typ = 'normal';
-    prettyPrint.config.styles['default'].td.color = '#fff';
-    prettyPrint.config.styles['default'].td.backgroundColor = 'rgba(15%,15%,20%,0.7)';
-    prettyPrint.config.styles['default'].td.border = '1px solid #fff';
-    prettyPrint.config.styles['default'].th.border = '1px solid #fff';
-    prettyPrint.config.maxDepth = 10;
 
     $.newWindow({id:name,posx:winx,posy:winy,width:730,height:500, title:name,content:data, type: typ});
     $.minimizeWindow(name);
@@ -42,7 +37,15 @@ function Viewer(url) {
 
 
   this.init = function() {
-    viewer.showData('music', '<iframe style="overflow: hidden;" src="http://www.soundserum.com/" width="1200" height="1500"></iframe>', 'iframe');
+
+    prettyPrint.config.styles['default'].td.color = '#fff';
+    prettyPrint.config.styles['default'].td.backgroundColor = 'rgba(15%,15%,20%,0.7)';
+    prettyPrint.config.styles['default'].td.border = '1px solid #fff';
+    prettyPrint.config.styles['default'].th.border = '1px solid #fff';
+    prettyPrint.config.maxDepth = 10;
+
+
+    //viewer.showData('music', '<iframe style="overflow: hidden;" src="http://www.soundserum.com/" width="1200" height="1500"></iframe>', 'iframe');
     this.world = new World(this.url, this.url + 'buildindex.php');
     this.world.init(this.loaded);
   };

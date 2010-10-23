@@ -50,7 +50,7 @@ function readchunk($path) {
 }
 
 function jsonchunkout($path) {
-  if (false & file_exists($path.'.json.gz')) {
+  if (file_exists($path.'.json.gz')) {
     echo file_get_contents($path.'.json.gz');
     return true;
   } else {
