@@ -2,6 +2,20 @@ Number.prototype.mod = function(n) {
   return ((this % n) + n) % n;
 };
 
+function wrapText(text, width) {
+  var i = 0;
+  var s = '';
+  do {
+    s += text.substr(i, 1);
+
+    if ((i % width) === (width-1)) {
+      s += '<br/>';
+    }
+    i++;
+  } while (i<text.length);
+  return s;
+}
+
 function decode64(input) {
      var output = "";
      var chr1, chr2, chr3 = "";

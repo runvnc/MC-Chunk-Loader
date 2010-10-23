@@ -207,11 +207,14 @@ World.prototype.init = function(cb) {
     status('Index has ' + ind.length + ' chunks');
     $.get('getlevel.php', function(data) {
       msg("Loaded level.dat");
-     
-      w.nbt = new NBT();
-      w.level = w.nbt.read(data);
-
+      var arr = JSON.parse(data);
+      var nbtreader = new NBTReader(arr);
+      var tmp = nbtreader.read();
+      w.level = tmp.root.Data;
+      msg('_______________');
+      msg('SpawnX = ' + w.level.SpawnX);
       w.chunks = [];
+      cb(theworld);
     });
   });
 };

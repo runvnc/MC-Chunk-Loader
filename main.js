@@ -20,6 +20,8 @@ function main() {
     theworld.pos.z = new Number(minz);
     viewer.loaded(); 
   });
+
+  viewer.init();
 }
 
 window.onload = function() {
@@ -31,6 +33,5 @@ window.onload = function() {
 
 main();
 
-window.setTimeout('viewer.init()', 20);
-
+//window.setTimeout('init()', 20);
 

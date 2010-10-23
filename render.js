@@ -13,41 +13,22 @@ var perspectiveMatrix;
 var scl = 1;
 var startTime = 0;
 
-//
-// start
-//
-// Called when the canvas is created to get the ball rolling.
-// Figuratively, that is. There's nothing moving in this demo.
-//
 function start(vertices, colors) {
   log('passed in ' + vertices.length);
   log('passed in ' + colors.length);
   canvas = document.getElementById("glcanvas");
   
-  initWebGL(canvas); // Initialize the GL context
-  // Only continue if WebGL is available and working
+  initWebGL(canvas);
   
   if (gl) {
-    gl.clearColor(0.0, 0.0, 0.0, 1.0); // Clear to black, fully opaque
-    gl.clearDepth(1.0); // Clear everything
-    gl.enable(gl.DEPTH_TEST); // Enable depth testing
-    //gl.enable(gl.BLEND);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0); 
+    gl.clearDepth(1.0); 
+    gl.enable(gl.DEPTH_TEST); 
     gl.depthFunc(gl.LEQUAL); // Near things obscure far things
-    //gl.blendFunc(gl.SRC_ALPHA, gl.SRC_ALPHA); 
-    // Initialize the shaders; this is where all the lighting for the
-    // vertices and so forth is established.
     
     initShaders();
     
-    // Here's where we call the routine that builds all the objects
-    // we'll be drawing.
-    
     initBuffers(vertices, colors);
-    
-    //gl.enable(0x8642); // ctx.VERTEX_PROGRAM_POINT_SIZE);
-    //gl.enable(0x0B10);
-    
-    // Set up to draw the scene periodically.
     
     canvas.onmousedown = handleMouseDown;
     document.onmouseup = handleMouseUp;
@@ -59,12 +40,6 @@ function start(vertices, colors) {
   }
 }
 
-//
-// initWebGL
-//
-// Initialize WebGL, returning the GL context or null if
-// WebGL isn't available or could not be initialized.
-//
 function initWebGL() {
   gl = null;
   
@@ -75,8 +50,6 @@ function initWebGL() {
   catch (e) {
     alert(e);
   }
-  
-  // If we don't have a GL context, give up now
   
   if (!gl) {
     alert("Unable to initialize WebGL. Your browser may not support it.");
@@ -97,11 +70,9 @@ function handleMouseDown(event) {
   lastMouseY = event.clientY;
 }
 
-
 function handleMouseUp(event) {
   mouseDown = false;
 }
-
 
 function handleMouseMove(event) {
   if (!mouseDown) {
@@ -122,10 +93,6 @@ function handleMouseMove(event) {
   lastMouseY = newY;
 }
 
-
-/** This is high-level function; REPLACE IT WITH YOUR CODE.
- * It must react to delta being more/less than zero.
- */
 function handle(delta) {
   if (delta < 0) 
     posMatrix = posMatrix.x(Matrix.Translation($V([0.0, 0.0, -0.2])).ensure4x4());
@@ -149,140 +116,60 @@ function wheel(event) {
   event.returnValue = false;
 }
 
-/* Initialization code. */
 if (window.addEventListener) window.addEventListener('DOMMouseScroll', wheel, false);
 window.onmousewheel = document.onmousewheel = wheel;
 
-
-//
-// initBuffers
-//
-// Initialize the buffers we'll need. For this demo, we just have
-// one object -- a simple two-dimensional square.
-//
 
 var vertsl;
 
 function initBuffers(vertices, colors) {
   vertsl = vertices.length;
   
-  // Create a buffer for the square's vertices.
-  
   squareVerticesBuffer = gl.createBuffer();
-  
-  // Select the squareVerticesBuffer as the one to apply vertex
-  // operations to from here out.
-  
   gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesBuffer);
-  
-  
-  // Now create an array of vertices for the square. Note that the Z
-  // coordinate is always 0 here.
-  
-  /* 
-   var vertices = [
-   1.0,  1.0,  0.0,
-   -1.0, 1.0,  0.0,
-   1.0,  -1.0, 0.0,
-   -1.0, -1.0, 0.0
-   ];
-   */
-  // Now pass the list of vertices into WebGL to build the shape. We
-  // do this by creating a WebGLFloatArray from the JavaScript array,
-  // then use it to fill the current vertex buffer.
-  
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
   
-  // Now set up the colors for the vertices
-  /*
-   var colors = [
-   1.0,  1.0,  1.0,  1.0,    // white
-   1.0,  0.0,  0.0,  1.0,    // red
-   0.0,  1.0,  0.0,  1.0,    // green
-   0.0,  0.0,  1.0,  1.0     // blue
-   ];
-   */
   squareVerticesColorBuffer = gl.createBuffer();
-  
   gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesColorBuffer);
-  
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
 }
 
-//
-// drawScene
-//
-// Draw the scene.
-//
+////////////////////////////////////////////////////
 function drawScene() {
-  // Clear the canvas before we start drawing on it.
-  
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  
   perspectiveMatrix = makePerspective(45, 1000.0 / 700.0, 0.01, 3000.0);
-  
-  // Set the drawing position to the "identity" point, which is
-  // the center of the scene.
-  
+
   loadIdentity();
-  
-  // Now move the drawing position a bit to where we want to start
-  // drawing the square.
-  
-  
-  //scaleM(scl);
-  
   mvTranslate([0.0, 1.0, -11.0]);
-  
   multMatrix(posMatrix);
-  
   multMatrix(moonRotationMatrix);
   
-  if ($('#roton').attr('checked')==true) {
+  if ($('#roton').attr('checked')===true) {
     var d = new Date();
     mvRotate((d.getTime() - startTime) / 100.0, [0.0, 1.0, 0.0]); 
   } else {
-    //log($('#roton').attr('checked'));
   }
 
-  // Draw the square by binding the array buffer to the square's vertices
-  // array, setting attributes, and pushing it to GL.
-  
   gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesBuffer);
   gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
-  
-  // Set the colors attribute for the vertices.
   
   gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesColorBuffer);
   gl.vertexAttribPointer(vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
   
-  // Draw the square.
-  
   setMatrixUniforms();
   
   gl.drawArrays(gl.POINTS, 0, vertsl / 3);
-  
-  
-  //  gl.getError();
 }
+//////////////////////////////////////////////////
 
-//
-// initShaders
-//
-// Initialize the shaders, so WebGL knows how to light our scene.
-//
 function initShaders() {
   var fragmentShader = getShader(gl, "shader-fs");
   var vertexShader = getShader(gl, "shader-vs");
-  
-  // Create the shader program
   
   shaderProgram = gl.createProgram();
   gl.attachShader(shaderProgram, vertexShader);
   gl.attachShader(shaderProgram, fragmentShader);
   gl.linkProgram(shaderProgram);
-  
-  // If creating the shader program failed, alert
   
   if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
     alert("Unable to initialize the shader program.");
@@ -297,23 +184,12 @@ function initShaders() {
   gl.enableVertexAttribArray(vertexColorAttribute);
 }
 
-//
-// getShader
-//
-// Loads a shader program by scouring the current document,
-// looking for a script with the specified ID.
-//
 function getShader(gl, id) {
   var shaderScript = document.getElementById(id);
-  
-  // Didn't find an element with the specified ID; abort.
   
   if (!shaderScript) {
     return null;
   }
-  
-  // Walk through the source element's children, building the
-  // shader source string.
   
   var theSource = "";
   var currentChild = shaderScript.firstChild;
@@ -322,12 +198,8 @@ function getShader(gl, id) {
     if (currentChild.nodeType == 3) {
       theSource += currentChild.textContent;
     }
-    
     currentChild = currentChild.nextSibling;
   }
-  
-  // Now figure out what type of shader script we have,
-  // based on its MIME type.
   
   var shader;
   
@@ -346,15 +218,8 @@ function getShader(gl, id) {
         return null; // Unknown shader type
       }
   
-  // Send the source to the shader object
-  
   gl.shaderSource(shader, theSource);
-  
-  // Compile the shader program
-  
   gl.compileShader(shader);
-  
-  // See if it compiled successfully
   
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     alert("An error occurred compiling the shaders: " + gl.getShaderInfoLog(shader));
@@ -363,10 +228,6 @@ function getShader(gl, id) {
   
   return shader;
 }
-
-//
-// Matrix utility functions
-//
 
 var mvMatrixStack = [];
 
@@ -388,12 +249,10 @@ function mvPopMatrix() {
   return mvMatrix;
 }
 
-
 function createRotationMatrix(angle, v) {
   var arad = angle * Math.PI / 180.0;
   return Matrix.Rotation(arad, $V([v[0], v[1], v[2]])).ensure4x4();
 }
-
 
 function mvRotate(angle, v) {
   multMatrix(createRotationMatrix(angle, v));
@@ -408,7 +267,6 @@ function multMatrix(m) {
 }
 
 function scaleM(s) {
-
   multMatrix(Matrix.Diagonal([s, s, s, 1]));
 }
 
@@ -423,3 +281,4 @@ function setMatrixUniforms() {
   var mvUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
   gl.uniformMatrix4fv(mvUniform, false, new Float32Array(mvMatrix.flatten()));
 }
+

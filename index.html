@@ -2,35 +2,40 @@
 <head>
 <title>MC Chunk Loader version -0.1</title>
 <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+<link type="text/css" rel="stylesheet" href="jquery.windows-engine.css"/>
 </head>
 <body>
 <style type="text/css">
 @font-face { font-family: Monaco; src: url('MONACO.TTF'); }
-
-body, p, span, td, div {
-  font-family: Monaco, sans-serif;
-  color: #fff;
-  /* cursor: pointer; */
-  font-size: 10pt;
+@font-face { font-family: Inconsolata; src: url('Inconsolata.otf'); }
+body {
   background-color: #000;
 }
 
+body, p, span, td, div {
+  font-family: Inconsolata, sans-serif;
+  color: #fff;
+  /* cursor: pointer; */
+  font-size: 11pt;
+}
 
 #trace {
   float: right;
   position: fixed;
-  right: 1px;
-  top: 10px;
-  width: 350px;
-  height: 200px;
+  right: 20px;
+  top: 50px;
+  width: 480px;
+  height: 300px;
   overflow: hidden;
-  white-space: pre-wrap;
-  /* font-family: Terminal, sans-serif; */
-  word-wrap: break-word;
-  font-size: 7pt;
-  z-index: 100;
-  background-color: transparent;
+  white-space: nowrap;
+  background-color: rgba(0%, 0%, 0%, 0.5);
 }
+
+#trace div {
+  font-size: 10pt;
+}
+
+
 </style>
 
 <!-- <script src="webgl-debug.js"></script> -->
@@ -87,9 +92,12 @@ y min: <input type="number" name="ymin" id="ymin" value="50" size="3">
       Your browser doesn't appear to support the HTML5 <code>&lt;canvas&gt;</code> element.  Asshole.
 </canvas>
 
+
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="jquery.windows-engine.js"></script>
 <script type="text/javascript" src="deflate.js"></script>
 <script type="text/javascript" src="util.js"></script>
+<script type="text/javascript" src="prettyprint.js"></script>
 <script type="text/javascript" src="log.js"></script>
 <script type="text/javascript" src="blockinfo.js"></script>
 <script type="text/javascript" src="nbt.js"></script> 

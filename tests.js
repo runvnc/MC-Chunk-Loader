@@ -69,7 +69,7 @@ test("TAG_Compound", function() {
 $.get('getlevel.php', function(data) {
   var arr = JSON.parse(data);
   var nbtreader = new NBTReader(arr);
-  $(document).append(JSON.stringify(nbtreader.read()));
+  $('#extra').append(JSON.stringify(nbtreader.read()));
 
 });
 
