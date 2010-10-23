@@ -1,4 +1,4 @@
-Requires: Apache configuration, PHP with zlib, WebGL-enabled browser,
+Requires: Apache configuration, PHP with zlib (php5-zlib), WebGL-enabled browser,
 save tree in [wwwroot]/world/ , writable world/ tree (chmod -R 777 world)
 
 http://www.php.net/manual/en/zlib.installation.php
