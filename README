@@ -1,5 +1,5 @@
 Requires: Apache configuration, PHP with zlib, WebGL-enabled browser,
-save tree in webroot/world/ , writable world/ tree (chmod -R 777 world)
+save tree in [wwwroot]/world/ , writable world/ tree (chmod -R 777 world)
 
 http://www.php.net/manual/en/zlib.installation.php
 
