@@ -12,7 +12,7 @@ function get_ms1bit(/*int*/ $i)
 function readint($str, $name) {
   $pos = strpos($str, $name);
 
-  if ($pos === false) return -1;
+  if ($pos === false) return -9999;
 
   $datx = substr($str, $pos+4, 4);
 
@@ -39,7 +39,7 @@ function readchunk($path) {
 
   $ret = array();
   $xpos = readint($contents, 'xPos');
-  if ($xpos>=0) {
+  if ($xpos!=-9999) {
     $ret['xpos'] = $xpos;
     $ret['zpos'] = readint($contents,'zPos');
 

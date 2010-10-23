@@ -67,15 +67,22 @@ function TAG_Int(nbtreader) {
 
 function makefloat(bytes) {
   var a = (bytes[0]<<24) | (bytes[1]<<16) | (bytes[2]<<8) | (bytes[3]);
-  return (a & 0x7fffff | 0x800000) * 1.0 / Math.pow(2,23) * Math.pow(2,  ((a>>23 & 0xff) - 127));
+  var isNegative = bytes[0] > 127;
+  var mult = 1;
+  if (isNegative) mult = -1;
+
+  return mult * ((a & 0x7fffff | 0x800000) * 1.0 / Math.pow(2,23) * Math.pow(2,  ((a>>23 & 0xff) - 127)));
 }
 
 function makedouble(bytes) {
   var b = (bytes[4]<<24) | (bytes[5]<<16) | (bytes[6]<<8) | (bytes[7]);
-  var a = (bytes[0]<<24) | (bytes[1]<<16) | (bytes[2]<<8) | (bytes[3]);
+  var a = makeSigned((bytes[0]<<24) | (bytes[1]<<16) | (bytes[2]<<8) | (bytes[3])); 
+
+  var isNegative = bytes[0] > 127;
+  var mult = 1;
+  if (isNegative) mult = -1;
   var e = (a >> 52 - 32 & 0x7ff) - 1023;
-  return (a & 0xfffff | 0x100000) * 1.0 / Math.pow(2,52-32) * Math.pow(2, e) +          
-     b * 1.0 / Math.pow(2, 52) * Math.pow(2, e);
+  return mult * ((a & 0xfffff | 0x100000) * 1.0 / Math.pow(2,52-32) * Math.pow(2, e) +             b * 1.0 / Math.pow(2, 52) * Math.pow(2, e));
 }
 
 function TAG_Float(nbtreader) {
@@ -101,6 +108,7 @@ function TAG_Double(nbtreader) {
   };
 
   this.decode = function() {
+    
     return makedouble(this.bytes);
   };
 

@@ -18,7 +18,7 @@ function main() {
 
     theworld.pos.x = new Number(minx);
     theworld.pos.z = new Number(minz);
-    viewer.loaded(); 
+    viewer.world.loadArea();
   });
 
   viewer.init();

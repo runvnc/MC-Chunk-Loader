@@ -118,8 +118,13 @@ function parsechunk(data, pos) {
   if (data) {
     var dat = JSON.parse(data);
     var nbt = new NBTReader(dat);
-    var c = nbt.read();
+    var ch = nbt.read();
+    var blocks = ch.root.Level.Blocks;
+    var c = Object();
+    c.pos = pos;
     //viewer.showData('chunk', c);
+    extractChunk(blocks, c);
+    theworld.chunks.push(c);
     $('body').trigger({
       type: 'chunkLoaded',
       chunk: c
@@ -185,13 +190,17 @@ function loadArea() {
   
   chunkload(theworld.url, theworld.pos, function(chunk) {
     var c = theworld.chunks[0];
-    if (countChunks % 2 === 0) status('loaded chunk at ' + theworld.pos.x + ', ' + theworld.pos.z);
+    if (countChunks % 2 === 0) msg('loaded chunk at ' + theworld.pos.x + ', ' + theworld.pos.z);
     theworld.pos = nextChunk(theworld.pos);
     if (theworld.pos.cont) {
       theworld.loadArea();
     }
     else {
       status('loaded ' + countChunks + ' chunks &nbsp; &nbsp; &nbsp; LIKE A BOSS');
+      $('#trace').animate({
+        height: 'toggle'
+      });
+
       start(theworld.vertices, theworld.colors);
     }
   });
@@ -220,6 +229,7 @@ World.prototype.init = function(cb) {
   $.get(w.indexLocation, function(ind) {
     w.chunkIndex = ind;
     status('Index has ' + ind.length + ' chunks');
+    
     $.get('getlevel.php', function(data) {
       msg("Loaded level.dat");
       var arr = JSON.parse(data);
@@ -227,7 +237,16 @@ World.prototype.init = function(cb) {
       var tmp = nbtreader.read();
       w.level = tmp.root.Data;
       msg('_______________');
-      msg('SpawnX = ' + w.level.SpawnX);
+      msg('PlayerX = ' + w.level.Player.Pos[0]);
+      msg('PlayerZ = ' + w.level.Player.Pos[2]);
+      var posx = Math.round(w.level.Player.Pos[0] / ChunkSizeX);
+      var posz = Math.round(w.level.Player.Pos[2] / ChunkSizeZ);
+      msg('posx = ' + posx.toString());
+      msg('posz = ' + posz.toString()); 
+      $('#xmin').val(posx - 8);
+      $('#xmax').val(posx + 8);
+      $('#zmin').val(posz - 8);
+      $('#zmax').val(posz + 8);
       w.chunks = [];
       cb(theworld);
     });
