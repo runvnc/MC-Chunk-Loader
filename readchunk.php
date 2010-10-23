@@ -38,10 +38,15 @@ function readchunk($path) {
   gzclose($zd);
 
   $ret = array();
-  $ret['xpos'] = readint($contents,'xPos');
-  $ret['zpos'] = readint($contents,'zPos');
+  $xpos = readint($contents, 'xPos');
+  if ($xpos>=0) {
+    $ret['xpos'] = $xpos;
+    $ret['zpos'] = readint($contents,'zPos');
 
-  return $ret;
+    return $ret;
+  } else {
+    return null;
+  }
 }
 
 function jsonchunkout($path) {

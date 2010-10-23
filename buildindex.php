@@ -10,10 +10,11 @@ ini_set('memory_limit', '128M');
   function process_dir($dir,$recursive = FALSE) {
     if (is_dir($dir)) {
       for ($list = array(),$handle = opendir($dir); (FALSE !== ($file = readdir($handle)));) {
-        if (($file != '.' && $file != '..') && (file_exists($path = $dir.'/'.$file))) {
+        if (($file != '.' && $file != '..' && $file != 'level.dat.json' && $file != 'level.dat.json.gz') && (file_exists($path = $dir.'/'.$file))) {
           if (is_dir($path) && ($recursive)) {
             $list = array_merge($list, process_dir($path, TRUE));
           } else {
+            
             $entry = array('filename' => $file);
             
  //---------------------------------------------------------//
@@ -39,6 +40,9 @@ ini_set('memory_limit', '128M');
     continue;
   } 
   
+  $pos3 = strpos($file, 'evel.dat');
+  if ($pos3>0) continue;
+
   $entry['dat'] = readchunk($path);
      
   $entry['filename'] = trimpath($path);
@@ -54,7 +58,8 @@ ini_set('memory_limit', '128M');
  //-----------------     End Editable     ------------------//
               break;
             } while (FALSE);
-            $list[] = $entry;
+            if ($entry['dat'] && $entry['dat']['xpos'])
+              $list[] = $entry;
           }
         }
       }

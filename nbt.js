@@ -25,7 +25,6 @@ function TAG(nbtreader) {
   };
 }
 
-
 function readName() {
     var tagName = new TAG_String(this.reader);
     this.name = tagName.read();
@@ -156,6 +155,7 @@ function makeshort(bytes) {
 function TAG_String(nbtreader) {
 
   this.read = function() {
+    if (!this.reader) return 0;
     var shortBytes = this.reader.readBytes(2);
     this.byteCount = makeshort(shortBytes);
     if (this.byteCount === 0 ) {
@@ -222,6 +222,25 @@ function TAG_List(nbtreader) {
   };
 }
 
+function TAG_Byte_Array(nbtreader) {
+  this.reader = nbtreader;
+
+  this.read = function() {
+    var type = 1;
+    var length = makeint(this.reader.readBytes(4));
+    var arr = [];
+    var tag = null;
+    for (var i=0; i<length; i++) {
+      tag = this.reader.read(type, '_'+i.toString());
+      arr.push(tag);
+    }
+    return arr;
+  };
+
+  this.decode = function() {
+
+  };
+}
 
 function TAG_Compound(nbtreader) {
   this.reader = nbtreader;
@@ -246,7 +265,6 @@ function TAG_Compound(nbtreader) {
   };
 }
 
-
 TAG_String.prototype.readName = readName;
 TAG_Byte.prototype.readName = readName;
 TAG_Short.prototype.readName = readName;
@@ -256,6 +274,7 @@ TAG_Compound.prototype.readName = readName;
 TAG_List.prototype.readName = readName;
 TAG_Float.prototype.readName = readName;
 TAG_Double.prototype.readName = readName;
+TAG_Byte_Array.prototype.readName = readName;
 
 function NBTReader(data) {
   this.position = 0;
@@ -268,7 +287,6 @@ function NBTReader(data) {
       if (type.length === 0) return null;
     } else {
       type = typespec;
-
     }
   
     var typeStr = '_'+type.toString();
@@ -298,9 +316,9 @@ function NBTReader(data) {
       case 'TAG_Double':
         tag = new TAG_Double(this);
         break;
-      //case 'TAG_Byte_Array':
-      //  tag = new TAG_Byte_Array(this);
-      //  break;
+      case 'TAG_Byte_Array':
+        tag = new TAG_Byte_Array(this);
+        break;
       case 'TAG_String':
         tag = new TAG_String(this);
         break;
@@ -335,8 +353,7 @@ function NBTReader(data) {
           ret.push(this.data[i]);
           this.i++;
           this.position++;
-    }     
-    
+    }      
     return ret;  
   };
 

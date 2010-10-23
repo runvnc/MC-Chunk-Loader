@@ -44,8 +44,9 @@ function chunkfile(x, z) {
   for (var i=0; i< theworld.chunkIndex.length; i++) {
     var ch = theworld.chunkIndex[i];
     var dat = ch.dat;
-    if (i<4) log(JSON.stringify(dat));
-    if (dat['xpos']==x && dat['zpos']==z) return ch.filename;
+    if (!dat) {
+      continue;
+    } else if (dat['xpos']==x && dat['zpos']==z) return ch.filename;
   }
   return 'unindexed';
 }
@@ -114,19 +115,33 @@ function extractChunk(blocks, chunk) {
 
 
 function parsechunk(data, pos) {
+  if (data) {
+    var dat = JSON.parse(data);
+    var nbt = new NBTReader(dat);
+    var c = nbt.read();
+    //viewer.showData('chunk', c);
+    $('body').trigger({
+      type: 'chunkLoaded',
+      chunk: c
+    });
+    return c; 
+  }
+/*
   var blocks = tagfixed(data, 'Blocks', 32768);
   var c = Object();
   c.pos = pos;
   extractChunk(blocks, c);
-  theworld.chunks.push(c);
-  return c;
+  theworld.chunks.push(c);* /
+
+  return c; */
 }
 
 function chunkload(url, pos, callback) {
   log('loading chunk pos=' + JSON.stringify(pos));
   var fl = chunkfile(pos.x, pos.z);
   if (fl != 'unindexed') {
-          var loc = url + '/' + fl;
+          var loc = url + 'getchunk.php?file=/' + 
+              encodeURIComponent(fl);
           $.ajax({
             url: loc,
             dataType: 'html',
