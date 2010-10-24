@@ -48,6 +48,8 @@ precision highp float;
 uniform float fTime;
 varying vec4 vColor;
 
+float seed;
+
 float rand(vec3 co){
   return fract(sin(co.z * 12.9898 + co.x * 78.23353453) * 43758.5453);
 }
@@ -59,16 +61,14 @@ void main(void) {
         (vColor[0]>vColor[1] &&
          vColor[1]>vColor[2] ) ) {
 
-        float offset = fTime / 1000.0;
-        offset -= gl_FragCoord.x - gl_FragCoord.z;
-        vec3 tmp = vec3(gl_FragCoord.x, fTime / 100.0, gl_FragCoord.z);
-        offset -= gl_FragCoord.y * tmp / 10.0;
-        offset -= gl_FragCoord.z * tmp / 1.0;
-        offset -= rand(tmp) * 8.0;
+        float offset = -fTime;
+        offset -= gl_FragCoord.y * 5.5;
+        vec3 n = vec3(gl_FragCoord.x, gl_FragCoord.y,gl_FragCoord.z);
+        offset -= rand(n) * 3.5;
       
-        float m = mod(offset, 200.0) - 100.0;
+        float m = mod(offset, 7.0);
         
-        gl_FragColor = vColor + m/700.0 ;
+        gl_FragColor = vColor + m/11.0 ;
     } else {
         gl_FragColor = vColor;
     }  
