@@ -56,10 +56,8 @@ float rand(vec3 co){
 
       
 void main(void) {
-    if ((vColor[2]>vColor[1] && 
-        vColor[2]>vColor[0]) || 
-        (vColor[0]>vColor[1] &&
-         vColor[1]>vColor[2] ) ) {
+    if ((vColor[0]>vColor[1] &&
+         vColor[1]>vColor[2])  ) {
 
         float offset = -fTime;
         offset -= gl_FragCoord.y * 5.5;
@@ -106,6 +104,14 @@ void main(void) {
   vColor[0] *= (1.0/dist2);
   vColor[1] *= (1.0/dist2);
   vColor[2] *= (1.0/dist2);
+
+  if ((aVertexColor[2] > aVertexColor[1]) && 
+      (aVertexColor[2] > aVertexColor[0])) {
+    vec3 tmp = vec3(gl_Position.x,gl_Position.y,gl_Position.z);
+    //gl_Position.x += rand(tmp);
+    vec3 tmp2 = vec3(gl_Position.y, gl_Position.z, gl_Position.y);
+    //gl_Position.z += rand(tmp2); 
+  }
 }
 </script> 
 
