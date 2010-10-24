@@ -95,9 +95,9 @@ function handleMouseMove(event) {
 
 function handle(delta) {
   if (delta < 0) 
-    posMatrix = posMatrix.x(Matrix.Translation($V([0.0, 0.0, -0.2])).ensure4x4());
+    posMatrix = posMatrix.x(Matrix.Translation($V([0.0, 0.0, -0.5])).ensure4x4());
   else 
-    posMatrix = posMatrix.x(Matrix.Translation($V([0.0, 0.0, 0.2])).ensure4x4());
+    posMatrix = posMatrix.x(Matrix.Translation($V([0.0, 0.0, 0.5])).ensure4x4());
 }
 
 function wheel(event) {

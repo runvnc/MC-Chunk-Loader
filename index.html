@@ -100,10 +100,12 @@ void main(void) {
   float dist = distance(pos2, light);
   
   vColor = aVertexColor;
-  float dist2 = dist / 12.0;
-  vColor[0] *= (1.0/dist2);
-  vColor[1] *= (1.0/dist2);
-  vColor[2] *= (1.0/dist2);
+  float dist2 = dist / 14.0;
+  vColor[0] *= (1.0/dist2) * 1.1;
+  vColor[1] *= (1.0/dist2) * 1.1;
+  vColor[2] *= (1.0/dist2) * 1.1;
+
+  gl_PointSize *= 1.0/(gl_Position.z/15.0);
 
   if ((aVertexColor[2] > aVertexColor[1]) && 
       (aVertexColor[2] > aVertexColor[0])) {
