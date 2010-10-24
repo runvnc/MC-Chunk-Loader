@@ -1,4 +1,5 @@
 var viewer;
+var options = { renderType: 'points' };
 
 function main() {
   viewer = new Viewer(window.location);
@@ -25,10 +26,10 @@ function main() {
 }
 
 window.onload = function() {
-  //document.onselectstart = function() {
-  // / return false;
-  //} // ie
-  //document.onmousedown = function() {return false;} // mozilla
+  document.onselectstart = function() {
+    return false;
+  }; // ie
+  document.onmousedown = function() {return false;}; // mozilla
 };
 
 main();

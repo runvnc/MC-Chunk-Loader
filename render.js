@@ -36,7 +36,7 @@ function start(vertices, colors) {
     
     var d = new Date();
     startTime = d.getTime();
-    setInterval(drawScene, 30);
+    setInterval(drawScene, 15);
   }
 }
 
@@ -148,6 +148,7 @@ function drawScene() {
     var d = new Date();
     mvRotate((d.getTime() - startTime) / 100.0, [0.0, 1.0, 0.0]); 
   } else {
+    var n = 0;
   }
 
   gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesBuffer);
@@ -157,8 +158,12 @@ function drawScene() {
   gl.vertexAttribPointer(vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
   
   setMatrixUniforms();
-  
-  gl.drawArrays(gl.POINTS, 0, vertsl / 3);
+
+  if (options.renderType == 'lines') {
+    gl.drawArrays(gl.LINES, 0, vertsl / 6);
+  } else {  
+    gl.drawArrays(gl.POINTS, 0, vertsl / 3);
+  }
 }
 //////////////////////////////////////////////////
 
@@ -242,7 +247,7 @@ function mvPushMatrix(m) {
 }
 
 function mvPopMatrix() {
-  if (mvMatrixStack.length == 0) {
+  if (mvMatrixStack.length === 0) {
     throw "Invalid popMatrix!";
   }
   mvMatrix = mvMatrixStack.pop();

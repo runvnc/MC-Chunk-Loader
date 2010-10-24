@@ -14,6 +14,7 @@ var minz = -4;
 var maxx = 4;
 var maxz = 4;
 var ymin = 5;
+var filled = [];
 
 function b36(n) {
   var r = "";
@@ -70,7 +71,9 @@ function transNeighbors(blocks, x, y, z) {
 function extractChunk(blocks, chunk) {
   chunk.vertices = [];
   chunk.colors = [];
-  
+  chunk.blocks = blocks;
+  chunk.filled = [];
+
   for (x = 0; x < ChunkSizeX; x++) {
     for (z = 0; z < ChunkSizeZ; z++) {
       for (y = ymin; y < ChunkSizeY; y++) {
@@ -90,27 +93,139 @@ function extractChunk(blocks, chunk) {
         
         //if ((y>64) & blockType.id ===1) 
         //  show = true;
+        
+    
         if (blockType.id !== 0) show = transNeighbors(blocks, x, y, z);
         
-        var xmod = (minx + (maxx - minx) / 2.0) * ChunkSizeX;
-        var zmod = (minz + (maxz - minz) / 2.0) * ChunkSizeZ;
-        
         if (show) {
-          theworld.vertices.push(((-1 * xmod) + x + (chunk.pos.x) * ChunkSizeX * 1.00000) / 30.00);
-          theworld.vertices.push(((y + 1) * 1.0) / 30.0);
-          theworld.vertices.push(((-1 * zmod) + z + (chunk.pos.z) * ChunkSizeZ * 1.00000) / 30.00);
-          
-          theworld.colors.push(blockType.rgba[0]);
-          theworld.colors.push(blockType.rgba[1]);
-          theworld.colors.push(blockType.rgba[2]);
-          theworld.colors.push(blockType.rgba[3]);
+
+          addBlock([x,y,z], chunk);
         }
         
       } // y
     } // z
   } // x 
-  //log(JSON.stringify(chunk.vertices)); 
   countChunks++;
+  renderChunk(chunk);
+}
+
+
+function addBlock(position, chunk) {
+  var verts = [
+    position[0],
+    position[1],
+    position[2]
+  ];
+  
+  chunk.filled.push(verts);
+}
+
+function calcPoint(pos, chunk) {
+  var verts = [];
+
+  var xmod = (minx + (maxx - minx) / 2.0) * ChunkSizeX;
+  var zmod = (minz + (maxz - minz) / 2.0) * ChunkSizeZ;
+
+  verts.push(((-1 * xmod) + pos[0] + (chunk.pos.x) * ChunkSizeX * 1.00000) / 30.00);
+  verts.push(((pos[1] + 1) * 1.0) / 30.0);
+  verts.push(((-1 * zmod) + pos[2] + (chunk.pos.z) * ChunkSizeZ * 1.00000) / 30.00);
+  return verts;
+}
+
+function renderChunk(chunk) {
+  if (options.renderType == 'lines') {
+    renderLines(chunk);
+  } else {
+    renderPoints(chunk);
+  }
+}
+
+function renderLines(chunk) {
+  for (var i=0; i<chunk.filled.length; i++) {
+    var verts = chunk.filled[i];
+    renderVoxelLines(chunk, verts[0], verts[1], verts[2]);
+  }
+}
+
+
+function renderPoints(chunk) {
+  for (var i=0; i<chunk.filled.length; i++) {
+    var verts = chunk.filled[i];
+    renderVoxelPoints(chunk, verts[0], verts[1], verts[2]);
+  }
+}
+
+
+function getBlockType(blocks, x, y, z) {
+  var blockType = blockInfo['_-1'];
+  var id = blocks[y + (z * ChunkSizeY + (x * ChunkSizeY * ChunkSizeZ))];
+  var blockID = '_-1';
+  if (id) blockID = '_' + id.toString();
+  if (blockInfo[blockID]) {
+    blockType = blockInfo[blockID];
+  }
+  return blockType;
+}
+
+function getColor(pos, chunk) {
+  var t = getBlockType(chunk.blocks, pos[0], pos[1], pos[2]);
+  return t.rgba;
+}
+
+function renderVoxelLines(chunk, x, y, z) {
+  for (i = x - 1; i < x + 2 & i < ChunkSizeX; i++) {
+    for (j = y - 1; j < y + 2; j++) {
+      for (k = z - 1; k < z + 2 & k < ChunkSizeZ; k++) {
+        if (!(i == x && j == y && k == z)) {
+          var blockType = getBlockType(chunk.blocks, i,j,k);
+          if (blockType.id>0) {
+            addLine([x, y, z], [i, j, k], chunk); 
+          }
+        }
+      }
+    }
+  }
+  return true;    
+}
+
+function renderVoxelPoints(chunk, x, y, z) {
+  addPoint([x,y,z], chunk);
+}
+
+function addPoint(p, chunk) {
+  var a = calcPoint(p, chunk);
+  var c1 = getColor(p, chunk);
+  theworld.vertices.push(a[0]);
+  theworld.vertices.push(a[1]);
+  theworld.vertices.push(a[2]);
+
+  theworld.colors.push(c1[0]);
+  theworld.colors.push(c1[1]);
+  theworld.colors.push(c1[2]);
+  theworld.colors.push(c1[3]);
+}
+
+function addLine(p1, p2, chunk) {
+  var a = calcPoint(p1, chunk);
+  var b = calcPoint(p2, chunk);
+  var c1 = getColor(p1, chunk);
+  var c2 = getColor(p2, chunk);
+  theworld.vertices.push(a[0]);
+  theworld.vertices.push(a[1]);
+  theworld.vertices.push(a[2]);
+  theworld.vertices.push(b[0]);
+  theworld.vertices.push(b[1]);
+  theworld.vertices.push(b[2]);
+ 
+  theworld.colors.push(c1[0]);
+  theworld.colors.push(c1[1]);
+  theworld.colors.push(c1[2]);
+  theworld.colors.push(c1[3]);
+  theworld.colors.push(c2[0]);
+  theworld.colors.push(c2[1]);
+  theworld.colors.push(c2[2]);
+  theworld.colors.push(c2[3]);
+
 }
 
 
@@ -122,7 +237,6 @@ function parsechunk(data, pos) {
     var blocks = ch.root.Level.Blocks;
     var c = Object();
     c.pos = pos;
-    //viewer.showData('chunk', c);
     extractChunk(blocks, c);
     theworld.chunks.push(c);
     $('body').trigger({
@@ -200,7 +314,6 @@ function loadArea() {
       $('#trace').animate({
         height: 'toggle'
       });
-
       start(theworld.vertices, theworld.colors);
     }
   });
@@ -243,10 +356,10 @@ World.prototype.init = function(cb) {
       var posz = Math.round(w.level.Player.Pos[2] / ChunkSizeZ);
       msg('posx = ' + posx.toString());
       msg('posz = ' + posz.toString()); 
-      $('#xmin').val(posx - 8);
-      $('#xmax').val(posx + 8);
-      $('#zmin').val(posz - 8);
-      $('#zmax').val(posz + 8);
+      $('#xmin').val(posx - 12);
+      $('#xmax').val(posx + 12);
+      $('#zmin').val(posz - 12);
+      $('#zmax').val(posz + 12);
       w.chunks = [];
       cb(theworld);
     });
