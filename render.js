@@ -159,6 +159,8 @@ function drawScene() {
   
   setMatrixUniforms();
 
+  setTimeUniform();
+
   if (options.renderType == 'lines') {
     gl.drawArrays(gl.LINES, 0, vertsl / 6);
   } else {  
@@ -285,5 +287,11 @@ function setMatrixUniforms() {
   
   var mvUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
   gl.uniformMatrix4fv(mvUniform, false, new Float32Array(mvMatrix.flatten()));
+}
+
+function setTimeUniform() {
+  var pT = gl.getUniformLocation(shaderProgram, "fTime");
+  var d = new Date();
+  gl.uniform1f(pT, d.getTime() - startTime);
 }
 
