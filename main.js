@@ -26,10 +26,10 @@ function main() {
 }
 
 window.onload = function() {
-  document.onselectstart = function() {
+  document.getElementById('glcanvas').onselectstart = function() {
     return false;
   }; // ie
-  document.onmousedown = function() {return false;}; // mozilla
+  document.getElementById('glcanvas').onmousedown = function() {return false;}; // mozilla
 };
 
 main();

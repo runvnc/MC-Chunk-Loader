@@ -58,7 +58,7 @@ ini_set('memory_limit', '128M');
  //-----------------     End Editable     ------------------//
               break;
             } while (FALSE);
-            if ($entry['dat'] && $entry['dat']['xpos'])
+            //if ($entry['dat'] & $entry['dat']['xpos'] )
               $list[] = $entry;
           }
         }

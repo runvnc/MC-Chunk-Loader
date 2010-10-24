@@ -19,10 +19,10 @@ var filled = [];
 function b36(n) {
   var r = "";
   
-  if (n === 0) 
+  if (n == 0) 
     r = '0';
   else 
-    if (n < 1) 
+    if (n < 0) 
       r = '-' + baseConverter(Math.abs(n), 10, 36);
     else 
       r = baseConverter(n, 10, 36);
@@ -42,6 +42,7 @@ function chunkfilename(x, z) {
 
 function chunkfile(x, z) {
   return posfolder(x) + '/' + posfolder(z) + '/' + chunkfilename(x, z);
+/*
   for (var i=0; i< theworld.chunkIndex.length; i++) {
     var ch = theworld.chunkIndex[i];
     var dat = ch.dat;
@@ -50,6 +51,7 @@ function chunkfile(x, z) {
     } else if (dat['xpos']==x && dat['zpos']==z) return ch.filename;
   }
   return 'unindexed';
+*/
 }
 
 function transNeighbors(blocks, x, y, z) {
@@ -338,31 +340,27 @@ World.prototype.init = function(cb) {
   
   convertColors(); // in blockinfo.js
   w = this;
-  status("Loading chunk index..");
-  $.get(w.indexLocation, function(ind) {
-    w.chunkIndex = ind;
-    status('Index has ' + ind.length + ' chunks');
+  status("Loading..");
     
-    $.get('getlevel.php', function(data) {
-      msg("Loaded level.dat");
-      var arr = JSON.parse(data);
-      var nbtreader = new NBTReader(arr);
-      var tmp = nbtreader.read();
-      w.level = tmp.root.Data;
-      msg('_______________');
-      msg('PlayerX = ' + w.level.Player.Pos[0]);
-      msg('PlayerZ = ' + w.level.Player.Pos[2]);
-      var posx = Math.round(w.level.Player.Pos[0] / ChunkSizeX);
-      var posz = Math.round(w.level.Player.Pos[2] / ChunkSizeZ);
-      msg('posx = ' + posx.toString());
-      msg('posz = ' + posz.toString()); 
-      $('#xmin').val(posx - 12);
-      $('#xmax').val(posx + 12);
-      $('#zmin').val(posz - 12);
-      $('#zmax').val(posz + 12);
-      w.chunks = [];
-      cb(theworld);
-    });
+  $.get('getlevel.php', function(data) {
+     msg("Loaded level.dat");
+     var arr = JSON.parse(data);
+     var nbtreader = new NBTReader(arr);
+     var tmp = nbtreader.read();
+     w.level = tmp.root.Data;
+     msg('_______________');
+     msg('PlayerX = ' + w.level.Player.Pos[0]);
+     msg('PlayerZ = ' + w.level.Player.Pos[2]);
+     var posx = Math.round(w.level.Player.Pos[0] / ChunkSizeX);
+     var posz = Math.round(w.level.Player.Pos[2] / ChunkSizeZ);
+     msg('posx = ' + posx.toString());
+     msg('posz = ' + posz.toString()); 
+     $('#xmin').val(posx - 12);
+     $('#xmax').val(posx + 12);
+     $('#zmin').val(posz - 12);
+     $('#zmax').val(posz + 12);
+     w.chunks = [];
+     cb(theworld);
   });
 };
 
