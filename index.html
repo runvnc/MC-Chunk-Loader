@@ -63,12 +63,12 @@ void main(void) {
         offset -= gl_FragCoord.x - gl_FragCoord.z;
         vec3 tmp = vec3(gl_FragCoord.x, fTime / 100.0, gl_FragCoord.z);
         offset -= gl_FragCoord.y * tmp / 10.0;
-        offset -= gl_FragCoord.z * tmp / 10.0;
+        offset -= gl_FragCoord.z * tmp / 1.0;
         offset -= rand(tmp) * 8.0;
       
         float m = mod(offset, 200.0) - 100.0;
         
-        gl_FragColor = vColor + m/300.0 ;
+        gl_FragColor = vColor + m/700.0 ;
     } else {
         gl_FragColor = vColor;
     }  
