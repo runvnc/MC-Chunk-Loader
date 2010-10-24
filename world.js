@@ -41,7 +41,7 @@ function chunkfilename(x, z) {
 }
 
 function chunkfile(x, z) {
-  //return posfolder(x) + '/' + posfolder(z) + '/' + chunkfilename(x, z);
+  return posfolder(x) + '/' + posfolder(z) + '/' + chunkfilename(x, z);
   for (var i=0; i< theworld.chunkIndex.length; i++) {
     var ch = theworld.chunkIndex[i];
     var dat = ch.dat;
