@@ -1,3 +1,6 @@
+Demo video: http://www.youtube.com/watch?v=2Moe24BzPdU&feature=related
+other demo video: http://vimeo.com/16156993
+
 Requires: Apache configuration, PHP with zlib (php5-zlib), WebGL-enabled browser,
 save tree in [wwwroot]/world/ , writable world/ tree (chmod -R 777 world)
 
