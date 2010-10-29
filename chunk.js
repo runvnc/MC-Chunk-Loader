@@ -4,17 +4,23 @@
 //requires util
 //requires blockinfo
 
-var theworld = {vertices: [], colors: []};
+importScripts('log.js','util.js','deflate.js','nbt.js','blockinfo.js');
+
+var httpRequest;
+
+var myworld = {vertices: [], colors: [], chunks: []};
+
 var ChunkSizeY = 128;
 var ChunkSizeZ = 16;
 var ChunkSizeX = 16;
+var ymin = 50;
+var options = {renderType: 'ponts'};
+var minx = 0;
+var minz = 0;
+var maxx = 0;
+var maxz = 0;
 
-var minx = -4;
-var minz = -4;
-var maxx = 4;
-var maxz = 4;
-var ymin = 5;
-var filled = [];
+var pos;
 
 function b36(n) {
   var r = "";
@@ -42,16 +48,6 @@ function chunkfilename(x, z) {
 
 function chunkfile(x, z) {
   return posfolder(x) + '/' + posfolder(z) + '/' + chunkfilename(x, z);
-/*
-  for (var i=0; i< theworld.chunkIndex.length; i++) {
-    var ch = theworld.chunkIndex[i];
-    var dat = ch.dat;
-    if (!dat) {
-      continue;
-    } else if (dat['xpos']==x && dat['zpos']==z) return ch.filename;
-  }
-  return 'unindexed';
-*/
 }
 
 function transNeighbors(blocks, x, y, z) {
@@ -107,7 +103,7 @@ function extractChunk(blocks, chunk) {
       } // y
     } // z
   } // x 
-  countChunks++;
+  //countChunks++;
   renderChunk(chunk);
 }
 
@@ -122,11 +118,15 @@ function addBlock(position, chunk) {
   chunk.filled.push(verts);
 }
 
+var calced= 0;
+
 function calcPoint(pos, chunk) {
   var verts = [];
 
   var xmod = (minx + (maxx - minx) / 2.0) * ChunkSizeX;
   var zmod = (minz + (maxz - minz) / 2.0) * ChunkSizeZ;
+
+  if (calced++<2) postMessage('xmod = ' + xmod);
 
   verts.push(((-1 * xmod) + pos[0] + (chunk.pos.x) * ChunkSizeX * 1.00000) / 30.00);
   verts.push(((pos[1] + 1) * 1.0) / 30.0);
@@ -197,14 +197,14 @@ function renderVoxelPoints(chunk, x, y, z) {
 function addPoint(p, chunk) {
   var a = calcPoint(p, chunk);
   var c1 = getColor(p, chunk);
-  theworld.vertices.push(a[0]);
-  theworld.vertices.push(a[1]);
-  theworld.vertices.push(a[2]);
+  myworld.vertices.push(a[0]);
+  myworld.vertices.push(a[1]);
+  myworld.vertices.push(a[2]);
 
-  theworld.colors.push(c1[0]);
-  theworld.colors.push(c1[1]);
-  theworld.colors.push(c1[2]);
-  theworld.colors.push(c1[3]);
+  myworld.colors.push(c1[0]);
+  myworld.colors.push(c1[1]);
+  myworld.colors.push(c1[2]);
+  myworld.colors.push(c1[3]);
 }
 
 function addLine(p1, p2, chunk) {
@@ -212,21 +212,22 @@ function addLine(p1, p2, chunk) {
   var b = calcPoint(p2, chunk);
   var c1 = getColor(p1, chunk);
   var c2 = getColor(p2, chunk);
-  theworld.vertices.push(a[0]);
-  theworld.vertices.push(a[1]);
-  theworld.vertices.push(a[2]);
-  theworld.vertices.push(b[0]);
-  theworld.vertices.push(b[1]);
-  theworld.vertices.push(b[2]);
+  myworld.vertices.push(a[0]);
+  myworld.vertices.push(a[1]);
+  myworld.vertices.push(a[2]);
+  myworld.vertices.push(b[0]);
+  myworld.vertices.push(b[1]);
+  myworld.vertices.push(b[2]);
  
-  theworld.colors.push(c1[0]);
-  theworld.colors.push(c1[1]);
-  theworld.colors.push(c1[2]);
-  theworld.colors.push(c1[3]);
-  theworld.colors.push(c2[0]);
-  theworld.colors.push(c2[1]);
-  theworld.colors.push(c2[2]);
-  theworld.colors.push(c2[3]);
+  myworld.colors.push(c1[0]);
+  myworld.colors.push(c1[1]);
+  myworld.colors.push(c1[2]);
+  myworld.colors.push(c1[3]);
+  myworld.colors.push(c2[0]);
+  myworld.colors.push(c2[1]);
+  myworld.colors.push(c2[2]);
+  myworld.colors.push(c2[3]);
+
 }
 
 
@@ -239,180 +240,63 @@ function parsechunk(data, pos) {
     var c = Object();
     c.pos = pos;
     extractChunk(blocks, c);
-    theworld.chunks.push(c);
-    $('body').trigger({
-      type: 'chunkLoaded',
-      chunk: c
-    });
+    c.vertices = myworld.vertices;
+    c.colors = myworld.colors;
+    myworld.chunks.push(c);
+    //$('body').trigger({
+    //  type: 'chunkLoaded',
+    //  chunk: c
+    //});
     return c; 
   }
-/*
-  var blocks = tagfixed(data, 'Blocks', 32768);
-  var c = Object();
-  c.pos = pos;
-  extractChunk(blocks, c);
-  theworld.chunks.push(c);* /
-
-  return c; */
 }
 
-function ifLastChunk(x, z) {
-  //if (x>=maxx && z>=maxz) {
-    //  $('#trace').animate({
-    //    height: 'toggle'
-    //  });
-  //  log('done');
-    //  start(theworld.vertices, theworld.colors);
-  //}
+function infoReceived() {
+  var output = httpRequest.responseText;
+  if (output) {
+    //postMessage(output);
+    var c = parsechunk(output, pos);
+    postMessage(myworld);
+    close();
+  } else{
+    postMessage({fail:'fail'});
+    close();
+  }
+  httpRequest = null;
 }
 
-var countChunks = 0;
-var chunki;
-var chunkj;
-
-function resultReceiver(event) {
-  var data = event.data;
-
-  console.log(data);
-  if (!data.vertices) {
-    console.log('not verts');
-    return;
-  } else {
-    console.log('has verts');
-  }
-  
-  for (var i=0; i<data.vertices.length; i++) {
-    theworld.vertices.push(data.vertices[i]);
-  }
-
-  for (var j=0; j<data.colors.length; j++) {
-    theworld.colors.push(data.colors[j]);
-  }
-
-  countChunks++;
-  
-  if (countChunks>= (maxx-minx) * (maxz-minz)) {
-    start(theworld.vertices, theworld.colors);
-  }
-}
-
-function errorReceiver(event) {
-  console.log(event.data);
-}
-
-function chunkLoadALot(uri, posi) {
-  for (var i = minx; i<=maxx; i++) {  
-    for (var j = minz; j<=maxz; j++) {
-      var worker = new Worker("chunk.js");  
-      worker.onmessage = resultReceiver;  
-      worker.onerror = errorReceiver;  
-      var objstr = JSON.stringify({url: uri, x0: minx, x1:maxx, z0:minz, z1:maxz,
-                          a: i, b:j});
-
-      worker.postMessage(objstr);  
-    }
-  }
-}
-
-function chunkload(url, pos, callback) {
-  log('loading chunk pos=' + JSON.stringify(pos));
+function chunkload(url, pos) {
+  postMessage('loading chunk pos=' + JSON.stringify(pos));
+  postMessage('url is ' + url);
   var fl = chunkfile(pos.x, pos.z);
   if (fl != 'unindexed') {
           var loc = url + 'getchunk.php?file=/' + 
               encodeURIComponent(fl);
-          $.ajax({
-            url: loc,
-            dataType: 'html',
-            type: 'GET',
-            success: function(data) {
-              callback(theworld, parsechunk(data, pos));
-            },
-            error: function() {
-              callback(theworld, null);
-            }
-          });
+          httpRequest = new XMLHttpRequest();  
+          httpRequest.open("GET", loc, true);  
+          httpRequest.onload = infoReceived;  
+          httpRequest.send(null);  
+
   } else {
-    callback(theworld, null);
+    postMessage({fail: 'fail', position: pos});
+    close();
   }
 }
 
-
-function nextChunk(pos) {
-  var next = new Object();
-  next.cont = false;
-  if (pos.x < maxx) {
-    next.x = pos.x + 1;
-    next.z = pos.z;
-    next.cont = true;
-  }
-  else {
-  
-    if (pos.z < maxz) {
-      next.z = pos.z + 1;
-      next.x = minx;
-      next.cont = true;
-    }
-  }
-  return next;
-}
-
-//var countChunks = 0;
-
-function loadArea() {
-  var w = this;
-  chunkLoadALot(theworld.url, theworld.pos); 
-}
-
-
-function World(url, index) {
-  this.url = url;
-  this.chunks = [];
-  this.indexLocation = index;
-}
-
-World.prototype.init = function(cb) {
-  theworld = this;
-  this.vertices = [];
-  this.colors = [];
-  this.pos = {
-    x: minx,
-    y: 64,
-    z: minz
-  };
-  
-  convertColors(); // in blockinfo.js
-  w = this;
-  status("Loading..");
-    
-  $.get('getlevel.php', function(data) {
-     msg("Loaded level.dat");
-     var arr = JSON.parse(data);
-     var nbtreader = new NBTReader(arr);
-     var tmp = nbtreader.read();
-     w.level = tmp.root.Data;
-     msg('_______________');
-     msg('PlayerX = ' + w.level.Player.Pos[0]);
-     msg('PlayerZ = ' + w.level.Player.Pos[2]);
-     var posx = Math.round(w.level.Player.Pos[0] / ChunkSizeX);
-     var posz = Math.round(w.level.Player.Pos[2] / ChunkSizeZ);
-     msg('posx = ' + posx.toString());
-     msg('posz = ' + posz.toString()); 
-     minx = posx-12;
-     maxx = posx+12;
-     minz = posz-12;
-     maxz = posz+12;
-     $('#xmin').val(posx - 12);
-     $('#xmax').val(posx + 12);
-     $('#zmin').val(posz - 12);
-     $('#zmax').val(posz + 12);
-     w.chunks = [];
-     cb(theworld);
-  });
+errorReceiver = function(event) {
+  //log(event.data);
 };
 
-World.prototype.chunksToPoints = function() {
-
+onmessage = function(event) {
+  var dat = JSON.parse(event.data);
+  minx = dat.minx; 
+  maxx = dat.maxx;
+  minz = dat.minz;
+  maxz = dat.maxz;
+  pos = { x : dat.a, z :dat.b};
+  //postMessage(event.data);
+  
+  chunkload(dat.url.href, pos);
 };
 
-World.prototype.loadArea = loadArea;
 
