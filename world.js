@@ -41,8 +41,8 @@ function chunkfilename(x, z) {
 }
 
 function chunkfile(x, z) {
-  return posfolder(x) + '/' + posfolder(z) + '/' + chunkfilename(x, z);
-/*
+  //return posfolder(x) + '/' + posfolder(z) + '/' + chunkfilename(x, z);
+
   for (var i=0; i< theworld.chunkIndex.length; i++) {
     var ch = theworld.chunkIndex[i];
     var dat = ch.dat;
@@ -51,7 +51,7 @@ function chunkfile(x, z) {
     } else if (dat['xpos']==x && dat['zpos']==z) return ch.filename;
   }
   return 'unindexed';
-*/
+
 }
 
 function transNeighbors(blocks, x, y, z) {
@@ -269,16 +269,19 @@ function ifLastChunk(x, z) {
 var countChunks = 0;
 var chunki;
 var chunkj;
+var started = false;
 
 function resultReceiver(event) {
+  if (started) return;
   var data = event.data;
 
-  console.log(data);
+  //console.log(data);
   if (!data.vertices) {
-    console.log('not verts');
+    //console.log('not verts');
+    countChunks++;
     return;
   } else {
-    console.log('has verts');
+    //console.log('has verts');
   }
   
   for (var i=0; i<data.vertices.length; i++) {
@@ -290,9 +293,14 @@ function resultReceiver(event) {
   }
 
   countChunks++;
-  
-  if (countChunks>= (maxx-minx) * (maxz-minz)) {
+ 
+  //var chmax = (maxx-minx) * (maxz-minz ) - 10; 
+  status('Loaded ' + countChunks + ' of ' + toLoad + ' chunks'); 
+   
+  if (countChunks>= toLoad-5) {
+    msg('total vertices: ' + theworld.vertices.length /3);
     start(theworld.vertices, theworld.colors);
+    started = true;
   }
 }
 
@@ -300,16 +308,40 @@ function errorReceiver(event) {
   console.log(event.data);
 }
 
+var toLoad = 0;
+var wedone = false;
+
+function loadMore(uri,posi) {
+  var added = 0;
+  do { 
+        var worker = new Worker("chunk.js");
+        worker.onmessage = resultReceiver;
+        worker.onerror = errorReceiver;
+        var objstr = JSON.stringify({url: uri, x0: minx, x1:maxx, z0:minz, z1:maxz,
+                          a: posi.x, b:posi.z});
+
+        worker.postMessage(objstr);
+        posi = nextChunk(posi);
+ 
+  } while (next.cont && added<6);
+  if (!next.cont) wedone = true;
+}
+
 function chunkLoadALot(uri, posi) {
   for (var i = minx; i<=maxx; i++) {  
     for (var j = minz; j<=maxz; j++) {
-      var worker = new Worker("chunk.js");  
-      worker.onmessage = resultReceiver;  
-      worker.onerror = errorReceiver;  
-      var objstr = JSON.stringify({url: uri, x0: minx, x1:maxx, z0:minz, z1:maxz,
+      if (chunkfile(i,j) != 'unindexed' && toLoad<16) {
+        toLoad++;
+        var worker = new Worker("chunk.js");  
+        worker.onmessage = resultReceiver;  
+        worker.onerror = errorReceiver;  
+        var objstr = JSON.stringify({url: uri, x0: minx, x1:maxx, z0:minz, z1:maxz,
                           a: i, b:j});
 
-      worker.postMessage(objstr);  
+        worker.postMessage(objstr);  
+      } else {
+        var n=0;
+      }
     }
   }
 }
@@ -360,6 +392,7 @@ function nextChunk(pos) {
 
 function loadArea() {
   var w = this;
+  //loadMore(theworld.url, theworld.pos);
   chunkLoadALot(theworld.url, theworld.pos); 
 }
 
@@ -397,15 +430,23 @@ World.prototype.init = function(cb) {
      var posz = Math.round(w.level.Player.Pos[2] / ChunkSizeZ);
      msg('posx = ' + posx.toString());
      msg('posz = ' + posz.toString()); 
-     minx = posx-12;
-     maxx = posx+12;
-     minz = posz-12;
-     maxz = posz+12;
-     $('#xmin').val(posx - 12);
-     $('#xmax').val(posx + 12);
-     $('#zmin').val(posz - 12);
-     $('#zmax').val(posz + 12);
+     minx = posx-8;
+     maxx = posx+8;
+     minz = posz-8;
+     maxz = posz+8;
+     $('#xmin').val(posx - 8);
+     $('#xmax').val(posx + 8);
+     $('#zmin').val(posz - 8);
+     $('#zmax').val(posz + 8);
      w.chunks = [];
+
+     status('Loading chunk index..');
+     $.get(w.indexLocation, function(ind) {
+        status('Index has ' + ind.length + ' chunks');
+        w.chunkIndex = ind;
+     
+      });
+
      cb(theworld);
   });
 };

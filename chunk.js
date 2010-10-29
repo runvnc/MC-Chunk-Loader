@@ -48,6 +48,16 @@ function chunkfilename(x, z) {
 
 function chunkfile(x, z) {
   return posfolder(x) + '/' + posfolder(z) + '/' + chunkfilename(x, z);
+/*
+  for (var i=0; i< myworld.chunkIndex.length; i++) {
+    var ch = myworld.chunkIndex[i];
+    var dat = ch.dat;
+    if (!dat) {
+      continue;
+    } else if (dat['xpos']==x && dat['zpos']==z) return ch.filename;
+  }
+  return 'unindexed';
+*/
 }
 
 function transNeighbors(blocks, x, y, z) {
@@ -126,7 +136,7 @@ function calcPoint(pos, chunk) {
   var xmod = (minx + (maxx - minx) / 2.0) * ChunkSizeX;
   var zmod = (minz + (maxz - minz) / 2.0) * ChunkSizeZ;
 
-  if (calced++<2) postMessage('xmod = ' + xmod);
+  //if (calced++<2) postMessage('xmod = ' + xmod);
 
   verts.push(((-1 * xmod) + pos[0] + (chunk.pos.x) * ChunkSizeX * 1.00000) / 30.00);
   verts.push(((pos[1] + 1) * 1.0) / 30.0);
@@ -255,8 +265,10 @@ function infoReceived() {
   var output = httpRequest.responseText;
   if (output) {
     //postMessage(output);
+    
     var c = parsechunk(output, pos);
-    postMessage(myworld);
+    var tmp = { vertices: myworld.vertices, colors:myworld.colors};
+    postMessage(tmp);
     close();
   } else{
     postMessage({fail:'fail'});
@@ -266,8 +278,6 @@ function infoReceived() {
 }
 
 function chunkload(url, pos) {
-  postMessage('loading chunk pos=' + JSON.stringify(pos));
-  postMessage('url is ' + url);
   var fl = chunkfile(pos.x, pos.z);
   if (fl != 'unindexed') {
           var loc = url + 'getchunk.php?file=/' + 
@@ -284,18 +294,21 @@ function chunkload(url, pos) {
 }
 
 errorReceiver = function(event) {
+  postMessage('fail');
+  close();
   //log(event.data);
 };
 
 onmessage = function(event) {
   var dat = JSON.parse(event.data);
-  minx = dat.minx; 
-  maxx = dat.maxx;
-  minz = dat.minz;
-  maxz = dat.maxz;
+  convertColors();
+  minx = dat.x0; 
+  maxx = dat.x1;
+  minz = dat.z0;
+  maxz = dat.z1;
   pos = { x : dat.a, z :dat.b};
   //postMessage(event.data);
-  
+  myworld.chunkIndex = dat.chunkIndex;
   chunkload(dat.url.href, pos);
 };
 
