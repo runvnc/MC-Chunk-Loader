@@ -297,7 +297,7 @@ function resultReceiver(event) {
   //var chmax = (maxx-minx) * (maxz-minz ) - 10; 
   status('Loaded ' + countChunks + ' of ' + toLoad + ' chunks'); 
    
-  if (countChunks>= toLoad-5) {
+  if (countChunks>= toLoad-15) {
     msg('total vertices: ' + theworld.vertices.length /3);
     start(theworld.vertices, theworld.colors);
     started = true;
@@ -328,9 +328,13 @@ function loadMore(uri,posi) {
 }
 
 function chunkLoadALot(uri, posi) {
+  //msg('hi');
+
   for (var i = minx; i<=maxx; i++) {  
     for (var j = minz; j<=maxz; j++) {
-      if (chunkfile(i,j) != 'unindexed' && toLoad<16) {
+      //msg('trying to load at ' + i + ', ' + j);
+      //msg('chunkfile is ' + chunkfile(i,j));
+      if (true | chunkfile(i,j) != 'unindexed') {
         toLoad++;
         var worker = new Worker("chunk.js");  
         worker.onmessage = resultReceiver;  
@@ -348,6 +352,7 @@ function chunkLoadALot(uri, posi) {
 
 function chunkload(url, pos, callback) {
   log('loading chunk pos=' + JSON.stringify(pos));
+  
   var fl = chunkfile(pos.x, pos.z);
   if (fl != 'unindexed') {
           var loc = url + 'getchunk.php?file=/' + 
@@ -430,14 +435,14 @@ World.prototype.init = function(cb) {
      var posz = Math.round(w.level.Player.Pos[2] / ChunkSizeZ);
      msg('posx = ' + posx.toString());
      msg('posz = ' + posz.toString()); 
-     minx = posx-8;
-     maxx = posx+8;
-     minz = posz-8;
-     maxz = posz+8;
-     $('#xmin').val(posx - 8);
-     $('#xmax').val(posx + 8);
-     $('#zmin').val(posz - 8);
-     $('#zmax').val(posz + 8);
+     minx = posx-12;
+     maxx = posx+12;
+     minz = posz-12;
+     maxz = posz+12;
+     $('#xmin').val(posx - 12);
+     $('#xmax').val(posx + 12);
+     $('#zmin').val(posz - 12);
+     $('#zmax').val(posz + 12);
      w.chunks = [];
 
      status('Loading chunk index..');

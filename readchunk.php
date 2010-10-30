@@ -17,7 +17,9 @@ function readint($str, $name) {
   $datx = substr($str, $pos+4, 4);
 
   $dat = unpack('C*', $datx);
-  
+
+  $dat = $dat & 0xffffffff; 
+ 
   if (get_ms1bit($dat[4]) == 128) 
     $isnegative = true;
   else
