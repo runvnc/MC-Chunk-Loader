@@ -275,13 +275,10 @@ function resultReceiver(event) {
   if (started) return;
   var data = event.data;
 
-  //console.log(data);
   if (!data.vertices) {
-    //console.log('not verts');
     countChunks++;
     return;
   } else {
-    //console.log('has verts');
   }
   
   for (var i=0; i<data.vertices.length; i++) {
@@ -294,14 +291,34 @@ function resultReceiver(event) {
 
   countChunks++;
  
-  //var chmax = (maxx-minx) * (maxz-minz ) - 10; 
   status('Loaded ' + countChunks + ' of ' + toLoad + ' chunks'); 
    
-  if (countChunks>= toLoad-15) {
+  if (countChunks>= toLoad-10) { 
+    //viewer.showData('dat',prettyPrint(theworld.vertices));	
     msg('total vertices: ' + theworld.vertices.length /3);
+    showPlayer();
     start(theworld.vertices, theworld.colors);
     started = true;
   }
+}
+
+function addPoint2(p, c) {
+  theworld.vertices.push(p[0]);
+  theworld.vertices.push(p[1]);
+  theworld.vertices.push(p[2]);
+  theworld.colors.push(c[0]);
+  theworld.colors.push(c[1]);
+  theworld.colors.push(c[2]);
+  theworld.colors.push(c[3]);
+}
+
+function showPlayer() {
+ var p = theworld.level.Player.Pos;
+ for (i=-2; i<3; i++) {
+  for (j=-2; j<3; j++) {
+   addPoint2([p[0]+i,p[1],p[2]+j], [1.0,0.0,0.0,1.0]);
+  }
+ }  
 }
 
 function errorReceiver(event) {
@@ -328,12 +345,8 @@ function loadMore(uri,posi) {
 }
 
 function chunkLoadALot(uri, posi) {
-  //msg('hi');
-
   for (var i = minx; i<=maxx; i++) {  
     for (var j = minz; j<=maxz; j++) {
-      //msg('trying to load at ' + i + ', ' + j);
-      //msg('chunkfile is ' + chunkfile(i,j));
       if (true | chunkfile(i,j) != 'unindexed') {
         toLoad++;
         var worker = new Worker("chunk.js");  
@@ -435,14 +448,14 @@ World.prototype.init = function(cb) {
      var posz = Math.round(w.level.Player.Pos[2] / ChunkSizeZ);
      msg('posx = ' + posx.toString());
      msg('posz = ' + posz.toString()); 
-     minx = posx-12;
-     maxx = posx+12;
-     minz = posz-12;
-     maxz = posz+12;
-     $('#xmin').val(posx - 12);
-     $('#xmax').val(posx + 12);
-     $('#zmin').val(posz - 12);
-     $('#zmax').val(posz + 12);
+     minx = posx-4;
+     maxx = posx+4;
+     minz = posz-4;
+     maxz = posz+4;
+     $('#xmin').val(posx - 4);
+     $('#xmax').val(posx + 4);
+     $('#zmin').val(posz - 4);
+     $('#zmax').val(posz + 4);
      w.chunks = [];
 
      status('Loading chunk index..');

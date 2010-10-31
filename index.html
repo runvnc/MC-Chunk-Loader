@@ -91,7 +91,7 @@ float rand(vec3 co){
 }
     
 void main(void) {
-  gl_PointSize = 1.35;
+  gl_PointSize = 45.0;
   gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
   
   vec3 light = vec3(5.0, 0.0, 0.0);
@@ -100,20 +100,20 @@ void main(void) {
   float dist = distance(pos2, light);
   
   vColor = aVertexColor;
-  float dist2 = dist / 14.0;
-  vColor[0] *= (1.0/dist2) * 1.1;
-  vColor[1] *= (1.0/dist2) * 1.1;
-  vColor[2] *= (1.0/dist2) * 1.1;
+  float dist2 = dist / 12.0;
+  //vColor[0] *= (1.0/dist2) * 1.1;
+  //vColor[1] *= (1.0/dist2) * 1.1;
+  //vColor[2] *= (1.0/dist2) * 1.1;
 
-  gl_PointSize *= 1.0/(gl_Position.z/15.0);
+  gl_PointSize *= 1.0/(gl_Position.z/25.0);
 
-  if ((aVertexColor[2] > aVertexColor[1]) && 
-      (aVertexColor[2] > aVertexColor[0])) {
-    vec3 tmp = vec3(gl_Position.x,gl_Position.y,gl_Position.z);
-    //gl_Position.x += rand(tmp);
-    vec3 tmp2 = vec3(gl_Position.y, gl_Position.z, gl_Position.y);
-    //gl_Position.z += rand(tmp2); 
-  }
+  //if ((aVertexColor[2] > aVertexColor[1]) && 
+  //    (aVertexColor[2] > aVertexColor[0])) {
+  //  vec3 tmp = vec3(gl_Position.x,gl_Position.y,gl_Position.z);
+  //  gl_Position.x += rand(tmp);
+  //  vec3 tmp2 = vec3(gl_Position.y, gl_Position.z, gl_Position.y);
+  //  gl_Position.z += rand(tmp2); 
+  //}
 }
 </script> 
 
@@ -124,13 +124,16 @@ void main(void) {
 x min: <input type="number" id="xmin" name="xmin" size="3" value="-8">  z min: <input type="number" id="zmin" name="zmin" value="-8" size="3">
 x max: <input type="number" name="xmax" id="xmax" value="8" size="3">  z max: <input type="number" name="zmax" id="zmax" value="8" size="3">
 y min: <input type="number" name="ymin" id="ymin" value="50" size="3"> 
-  rotate <input type="checkbox" name="roton" id="roton" checked="checked"/>
+  rotate <input type="checkbox" name="roton" id="roton" />
 <input type="button" id="load" value="Load">
 
+<div id="canvashere">
+</div>
+<!--
 <canvas id="glcanvas" width="1000" height="700">
       Your browser doesn't appear to support the HTML5 <code>&lt;canvas&gt;</code> element.  Asshole.
 </canvas>
-
+-->
 
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
 <script type="text/javascript" src="jquery.windows-engine.js"></script>

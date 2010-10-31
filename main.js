@@ -1,12 +1,23 @@
 var viewer;
-var options = { renderType: 'points' };
+var options = { renderType: 'cubes' };
+
+
+var piOver180 = Math.PI / 180;
+function moveForward() {
+  var ps = posMatrix.elements;
+  var dist = 1.0;
+  var ps = posMatrix.elements;
+  ps[0][3] -= dist * Math.sin(yaw * piOver180);
+  ps[2][3] -= dist * Math.cos(yaw * piOver180);
+}
 
 function main() {
   viewer = new Viewer(window.location);
   
   $(document).keydown(function(event) {
     if (event.keyCode == '87') {
-      posMatrix = posMatrix.x(Matrix.Translation($V([0.0, 0.0, 0.1])).ensure4x4());
+      moveForward();
+      //posMatrix = posMatrix.x(Matrix.Translation($V([0.0, 0.0, 0.1])).ensure4x4());
     }
   });
   
@@ -33,6 +44,12 @@ window.onload = function() {
 };
 
 main();
+
+$(document).ready(function() {
+  $('#canvashere').html('<canvas id="glcanvas" width="' + $(window).width() + 
+                        '" height="' + Math.round($(window).height() *0.9) + '" ></canvas>');
+});
+
 
 //window.setTimeout('init()', 20);
 

@@ -13,8 +13,8 @@ var myworld = {vertices: [], colors: [], chunks: []};
 var ChunkSizeY = 128;
 var ChunkSizeZ = 16;
 var ChunkSizeX = 16;
-var ymin = 50;
-var options = {renderType: 'ponts'};
+var ymin =60;
+var options = {renderType: 'cubes'};
 var minx = 0;
 var minz = 0;
 var maxx = 0;
@@ -103,8 +103,10 @@ function extractChunk(blocks, chunk) {
         //  show = true;
         
     
-        if (blockType.id !== 0) show = transNeighbors(blocks, x, y, z);
-        
+        //if (blockType.id > 1) show = transNeighbors(blocks, x, y, z);
+         if ((blockType.id >1 && blockType.id != 13) ||
+	      (blockType.id===1 && transNeighbors(blocks,x,y,z))) show=true;
+ 
         if (show) {
 
           addBlock([x,y,z], chunk);
@@ -133,20 +135,17 @@ var calced= 0;
 function calcPoint(pos, chunk) {
   var verts = [];
 
-  var xmod = (minx + (maxx - minx) / 2.0) * ChunkSizeX;
-  var zmod = (minz + (maxz - minz) / 2.0) * ChunkSizeZ;
-
-  //if (calced++<2) postMessage('xmod = ' + xmod);
-
-  verts.push(((-1 * xmod) + pos[0] + (chunk.pos.x) * ChunkSizeX * 1.00000) / 30.00);
-  verts.push(((pos[1] + 1) * 1.0) / 30.0);
-  verts.push(((-1 * zmod) + pos[2] + (chunk.pos.z) * ChunkSizeZ * 1.00000) / 30.00);
+  verts.push( pos[0] + chunk.pos.x * ChunkSizeX * 1.00000);
+  verts.push(pos[1] * 1.0);
+  verts.push(pos[2] + chunk.pos.z * ChunkSizeZ * 1.00000);
   return verts;
 }
 
 function renderChunk(chunk) {
   if (options.renderType == 'lines') {
     renderLines(chunk);
+  } else if (options.renderType == 'cubes') {
+    renderCubes(chunk);
   } else {
     renderPoints(chunk);
   }
@@ -168,6 +167,14 @@ function renderPoints(chunk) {
 }
 
 
+function renderCubes(chunk) {
+  for (var i=0; i<chunk.filled.length; i++) {
+    var verts = chunk.filled[i];
+    renderVoxelCube(chunk, verts[0], verts[1], verts[2]);
+  }
+}
+
+
 function getBlockType(blocks, x, y, z) {
   var blockType = blockInfo['_-1'];
   var id = blocks[y + (z * ChunkSizeY + (x * ChunkSizeY * ChunkSizeZ))];
@@ -185,9 +192,9 @@ function getColor(pos, chunk) {
 }
 
 function renderVoxelLines(chunk, x, y, z) {
-  for (i = x - 1; i < x + 2 & i < ChunkSizeX; i++) {
+  for (i = x + 1; i < x + 2 & i < ChunkSizeX; i++) {
     for (j = y - 1; j < y + 2; j++) {
-      for (k = z - 1; k < z + 2 & k < ChunkSizeZ; k++) {
+      for (k = z + 1; k < z + 2 & k < ChunkSizeZ; k++) {
         if (!(i == x && j == y && k == z)) {
           var blockType = getBlockType(chunk.blocks, i,j,k);
           if (blockType.id>0) {
@@ -198,6 +205,10 @@ function renderVoxelLines(chunk, x, y, z) {
     }
   }
   return true;    
+}
+
+function renderVoxelCube(chunk, x, y, z) {
+  addCube([x,y,z], chunk);
 }
 
 function renderVoxelPoints(chunk, x, y, z) {
@@ -238,6 +249,73 @@ function addLine(p1, p2, chunk) {
   myworld.colors.push(c2[2]);
   myworld.colors.push(c2[3]);
 
+}
+
+var cadd = 0;
+
+function addFace(p, calced, clr, i, j, k, chunk) {
+  //if there is another cube blocking the
+  //face then this face won't be visible 
+  //anyway so don't include it
+  //postMessage('in addface');
+
+  var typ = getBlockType(chunk.blocks, p[0]+ i,p[1]+j,p[2]+k);
+  if (typ.id > 0) return;
+
+  if (cadd++ <2) {
+    postMessage('test');
+  } else {
+    close();
+    return;
+  }
+  //if 0,1,0 say this is top face
+  var faces = {
+    bottom: {pos:[0,-1,0], coords: [ [-0.5,-0.5,0.5],[0.5,-0.5,0.5], [0.5,-0.5,-0.5],[-0.5,-0.5,-0.5] ]},
+    top: {pos:[0,1,0], coords: [ [-0.5,0.5,0.5],[0.5,0.5,0.5], [0.5,0.5,-0.5],[-0.5,0.5,-0.5] ]},
+    front: {pos:[0,0,-1], coords: [ [-0.5,0.5,-0.5],[0.5,0.5,-0.5], [0.5,-0.5,-0.5],[-0.5,-0.5,-0.5] ]}
+  };
+
+  for (var n=0; n<faces.length; n++) {
+    var f = faces[n];
+    if (f.pos[0] === i && f.pos[1] === j && f.pos[2] === k) {
+      addQuad([f.coords[0]+calced[0], f.coords[1]+calced[1], f.coords[2]+calced[2]], clr);
+      return;
+    }
+  }
+} 
+
+
+function addQuad(points, color) {
+  myworld.vertices.add(points[0]);
+  myworld.vertices.add(points[1]);
+  myworld.vertices.add(points[2]);
+  myworld.vertices.add(points[2]);
+  myworld.vertices.add(points[3]);
+  myworld.vertices.add(points[0]);
+  for (var c=0; c<4; c++) {
+    myworld.colors.add(color[c]);
+  }
+  for (var c=0; c<4; c++) {
+    myworld.colors.add(color[c]);
+  }
+}
+
+function addCube(p, chunk) {
+  postMessage('test1');
+  close();
+  return;
+  var a = calcPoint(p, chunk);
+  var c1 = getColor(p, chunk);
+
+  for (var i=-1; i<2; i++) {
+    for (var j=-1; j<2; j++) {  
+      for (var k=-1; k<2; k++) {
+        if (Math.abs(i+j+k)===1) {
+          addFace(p, a, c1, i, j, k, chunk);
+        }
+      } 
+    }
+  }
 }
 
 

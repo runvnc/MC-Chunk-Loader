@@ -1,7 +1,7 @@
 var blockInfo = {
  '_-1':{id:-10,type:'fill',  rgba : [0.0,0.0,0.0,1.0]},
  '_0': {id:0, type:'air',   rgba : [1.0,1.0,1.0,1.0] },
- '_1': {id:1, type:'stone', rgba : [0.4,0.4,0.4,1.0] },  
+ '_1': {id:1, type:'stone', rgba : [0.5,0.55,0.55,1.0] },  
  '_2': {id:2, type:'grass', rgba : [0.0,0.6,0.0,1.0] },
  '_3': {id:3, type:'dirt',  rgba : [0.2, 0.0,0.0,1.0] },
  '_4': {id:4, type:'cobble',rgba : [84,94,88,1.0]},

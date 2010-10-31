@@ -12,20 +12,21 @@ var vertexColorAttribute;
 var perspectiveMatrix;
 var scl = 1;
 var startTime = 0;
+var pitch = 0.0;
+var yaw = 0.0;
 
 function start(vertices, colors) {
-  log('passed in ' + vertices.length);
-  log('passed in ' + colors.length);
+  posMatrix = Matrix.Translation($V(theworld.level.Player.Pos)).ensure4x4();
   canvas = document.getElementById("glcanvas");
   
   initWebGL(canvas);
   
   if (gl) {
     gl.clearColor(0.0, 0.0, 0.0, 1.0); 
-    gl.clearDepth(1.0); 
+    gl.clearDepth(1.0);
     gl.enable(gl.DEPTH_TEST); 
     gl.depthFunc(gl.LEQUAL); // Near things obscure far things
-    
+
     initShaders();
     
     initBuffers(vertices, colors);
@@ -60,8 +61,6 @@ var mouseDown = false;
 var lastMouseX = null;
 var lastMouseY = null;
 
-posMatrix = Matrix.Translation($V([0.0, -4.0, 0.0])).ensure4x4();
-
 var moonRotationMatrix = Matrix.I(4);
 
 function handleMouseDown(event) {
@@ -82,13 +81,26 @@ function handleMouseMove(event) {
   var newY = event.clientY;
   
   var deltaX = newX - lastMouseX;
-  var newRotationMatrix = createRotationMatrix(deltaX / 10, [0, 1, 0]);
-  
   var deltaY = newY - lastMouseY;
-  newRotationMatrix = newRotationMatrix.x(createRotationMatrix(deltaY / 10, [1, 0, 0]));
-  
+
+  pitch -= deltaY / 10.0;
+  yaw -= deltaX / 10.0;
+
+  lastMouseX = newX;
+  lastMouseY = newY;
+
+  return; 
+
+  var newRotationMatrix;
+  if (Math.abs(deltaX) > Math.abs(deltaY)) {
+    newRotationMatrix = createRotationMatrix(deltaX / 10, [0, 1, 0]);
+  } else {
+    newRotationMatrix = createRotationMatrix(deltaY / 10, [1, 0, 0]);
+  } 
+
   moonRotationMatrix = newRotationMatrix.x(moonRotationMatrix);
-  
+  //moonRotationMatrix = newRotationMatrix.x(posMatrix);
+ 
   lastMouseX = newX;
   lastMouseY = newY;
 }
@@ -137,13 +149,19 @@ function initBuffers(vertices, colors) {
 ////////////////////////////////////////////////////
 function drawScene() {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  perspectiveMatrix = makePerspective(45, 1000.0 / 700.0, 0.01, 3000.0);
+  perspectiveMatrix = makePerspective(45, canvas.width / canvas.height, 1.0, 3000.0);
 
   loadIdentity();
-  mvTranslate([0.0, 1.0, -11.0]);
-  multMatrix(posMatrix);
-  multMatrix(moonRotationMatrix);
-  
+
+  mvRotate(-pitch, [1,0,0]);
+  mvRotate(-yaw, [0,1,0]);
+ 
+  var campos = [0,0,0];
+  campos[0] = -1 * posMatrix.elements[0][3];
+  campos[1] = -1 * posMatrix.elements[1][3];
+  campos[2] = -1 * posMatrix.elements[2][3];
+  mvTranslate(campos);
+
   if ($('#roton').attr('checked')===true) {
     var d = new Date();
     mvRotate((d.getTime() - startTime) / 100.0, [0.0, 1.0, 0.0]); 
@@ -163,6 +181,8 @@ function drawScene() {
 
   if (options.renderType == 'lines') {
     gl.drawArrays(gl.LINES, 0, vertsl / 6);
+  } else if (options.renderType == 'cubes') {
+    gl.drawArrays(gl.POINTS, 0, vertsl / 9);
   } else {  
     gl.drawArrays(gl.POINTS, 0, vertsl / 3);
   }
@@ -258,7 +278,7 @@ function mvPopMatrix() {
 
 function createRotationMatrix(angle, v) {
   var arad = angle * Math.PI / 180.0;
-  return Matrix.Rotation(arad, $V([v[0], v[1], v[2]])).ensure4x4();
+  return Matrix.Rotation(arad, $V([v[0], v[1], 0])).ensure4x4();
 }
 
 function mvRotate(angle, v) {
