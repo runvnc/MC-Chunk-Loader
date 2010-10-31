@@ -182,7 +182,7 @@ function drawScene() {
   if (options.renderType == 'lines') {
     gl.drawArrays(gl.LINES, 0, vertsl / 6);
   } else if (options.renderType == 'cubes') {
-    gl.drawArrays(gl.POINTS, 0, vertsl / 9);
+    gl.drawArrays(gl.TRIANGLES, 0, vertsl / 9);
   } else {  
     gl.drawArrays(gl.POINTS, 0, vertsl / 3);
   }

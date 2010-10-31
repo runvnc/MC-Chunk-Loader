@@ -273,6 +273,9 @@ var started = false;
 
 function resultReceiver(event) {
   if (started) return;
+  //console.log(event.data);
+  //started = true;
+
   var data = event.data;
 
   if (!data.vertices) {
@@ -293,9 +296,10 @@ function resultReceiver(event) {
  
   status('Loaded ' + countChunks + ' of ' + toLoad + ' chunks'); 
    
-  if (countChunks>= toLoad-10) { 
+  if (countChunks>=toLoad -10) { 
     //viewer.showData('dat',prettyPrint(theworld.vertices));	
     msg('total vertices: ' + theworld.vertices.length /3);
+    
     showPlayer();
     start(theworld.vertices, theworld.colors);
     started = true;
@@ -322,7 +326,8 @@ function showPlayer() {
 }
 
 function errorReceiver(event) {
-  console.log(event.data);
+  countChunks++;
+  //console.log(event.data);
 }
 
 var toLoad = 0;
@@ -448,14 +453,14 @@ World.prototype.init = function(cb) {
      var posz = Math.round(w.level.Player.Pos[2] / ChunkSizeZ);
      msg('posx = ' + posx.toString());
      msg('posz = ' + posz.toString()); 
-     minx = posx-4;
-     maxx = posx+4;
-     minz = posz-4;
-     maxz = posz+4;
-     $('#xmin').val(posx - 4);
-     $('#xmax').val(posx + 4);
-     $('#zmin').val(posz - 4);
-     $('#zmax').val(posz + 4);
+     minx = posx-12;
+     maxx = posx+12;
+     minz = posz-12;
+     maxz = posz+12;
+     $('#xmin').val(posx - 12);
+     $('#xmax').val(posx + 12);
+     $('#zmin').val(posz - 12);
+     $('#zmax').val(posz + 12);
      w.chunks = [];
 
      status('Loading chunk index..');

@@ -261,49 +261,76 @@ function addFace(p, calced, clr, i, j, k, chunk) {
 
   var typ = getBlockType(chunk.blocks, p[0]+ i,p[1]+j,p[2]+k);
   if (typ.id > 0) return;
-
-  if (cadd++ <2) {
-    postMessage('test');
-  } else {
-    close();
-    return;
-  }
+  //postMessage('x2');
   //if 0,1,0 say this is top face
-  var faces = {
-    bottom: {pos:[0,-1,0], coords: [ [-0.5,-0.5,0.5],[0.5,-0.5,0.5], [0.5,-0.5,-0.5],[-0.5,-0.5,-0.5] ]},
-    top: {pos:[0,1,0], coords: [ [-0.5,0.5,0.5],[0.5,0.5,0.5], [0.5,0.5,-0.5],[-0.5,0.5,-0.5] ]},
-    front: {pos:[0,0,-1], coords: [ [-0.5,0.5,-0.5],[0.5,0.5,-0.5], [0.5,-0.5,-0.5],[-0.5,-0.5,-0.5] ]}
-  };
+  var faces = [
+    {pos:[0,-1,0], coords: [ [-0.5,-0.5,0.5],[0.5,-0.5,0.5], [0.5,-0.5,-0.5],[-0.5,-0.5,-0.5] ]}, //bottom
+    {pos:[0,1,0], coords: [ [-0.5,0.5,0.5],[0.5,0.5,0.5], [0.5,0.5,-0.5],[-0.5,0.5,-0.5] ]},  //top
+    {pos:[0,0,-1], coords: [ [-0.5,0.5,-0.5],[0.5,0.5,-0.5], [0.5,-0.5,-0.5],[-0.5,-0.5,-0.5] ]}, //front
+    {pos:[-1,0,0], coords: [ [-0.5,0.5 ,-0.5],[-0.5,0.5,0.5],[-0.5,-0.5,0.5],[-0.5,-0.5,-0.5]]}, //left
+    {pos:[1,0,0], coords: [ [0.5,0.5 ,-0.5],[0.5,0.5,0.5],[0.5,-0.5,0.5],[0.5,-0.5,-0.5]]}, //right
+    {pos:[0,0,1], coords: [ [0.5,0.5,0.5],[-0.5,0.5,0.5], [-0.5,-0.5,0.5],[0.5,-0.5,0.5] ]} //back
 
+
+  ];
+  //postMessage('p2');
   for (var n=0; n<faces.length; n++) {
     var f = faces[n];
-    if (f.pos[0] === i && f.pos[1] === j && f.pos[2] === k) {
-      addQuad([f.coords[0]+calced[0], f.coords[1]+calced[1], f.coords[2]+calced[2]], clr);
+    //postMessage('hi');
+    if (f.pos[0] == i && f.pos[1] == j && f.pos[2] == k) {
+      var qs = [];
+      for (var q=0; q<4; q++) {
+        var crd = f.coords[q];
+        qs.push([crd[0]+calced[0], crd[1]+calced[1], crd[2]+calced[2]]);
+      }
+      addQuad(qs, clr);
       return;
     }
   }
 } 
 
+function addCoords(v) {
+  myworld.vertices.push(v[0]);
+  myworld.vertices.push(v[1]);
+  myworld.vertices.push(v[2]);
+}
 
 function addQuad(points, color) {
-  myworld.vertices.add(points[0]);
-  myworld.vertices.add(points[1]);
-  myworld.vertices.add(points[2]);
-  myworld.vertices.add(points[2]);
-  myworld.vertices.add(points[3]);
-  myworld.vertices.add(points[0]);
+  //postMessage('adding quad' ); 
+  
+  addCoords(points[0]);
+  addCoords(points[1]);
+  addCoords(points[2]);
+  addCoords(points[2]);
+  addCoords(points[3]);
+  addCoords(points[0]);
   for (var c=0; c<4; c++) {
-    myworld.colors.add(color[c]);
+    myworld.colors.push(color[c]);
   }
   for (var c=0; c<4; c++) {
-    myworld.colors.add(color[c]);
+    myworld.colors.push(color[c]);
   }
+  for (var c=0; c<4; c++) {
+    myworld.colors.push(color[c]);
+  }
+
+ for (var c=0; c<4; c++) {
+    myworld.colors.push(color[c]);
+  }
+  for (var c=0; c<4; c++) {
+    myworld.colors.push(color[c]);
+  }
+  for (var c=0; c<4; c++) {
+    myworld.colors.push(color[c]);
+  }
+
+
+  //postMessage(myworld.colors);
+  //close();
+
 }
 
 function addCube(p, chunk) {
-  postMessage('test1');
-  close();
-  return;
   var a = calcPoint(p, chunk);
   var c1 = getColor(p, chunk);
 

@@ -46,8 +46,12 @@ window.onload = function() {
 main();
 
 $(document).ready(function() {
-  $('#canvashere').html('<canvas id="glcanvas" width="' + $(window).width() + 
-                        '" height="' + Math.round($(window).height() *0.9) + '" ></canvas>');
+  var w = $(window).width();
+  w -= 25;
+  var h = $(window).height();
+  h -= 25;
+  $('#canvashere').html('<canvas id="glcanvas" width="' + w.toString() + 
+                        '" height="' + h.toString() + '" ></canvas>');
 });
 
 
