@@ -76,11 +76,13 @@ function transNeighbors(blocks, x, y, z) {
   return false;
 }
 
-function extractChunk(blocks, chunk) {
+function extractChunk(blocks, skylight, blocklight, chunk) {
   chunk.vertices = [];
   chunk.colors = [];
   chunk.blocks = blocks;
   chunk.filled = [];
+  chunk.skylight = unpack4bit(skylight);
+  chunk.blocklight = unpack4bit(blocklight);
 
   for (x = 0; x < ChunkSizeX; x++) {
     for (z = 0; z < ChunkSizeZ; z++) {
@@ -135,9 +137,14 @@ var calced= 0;
 function calcPoint(pos, chunk) {
   var verts = [];
 
-  verts.push( pos[0] + chunk.pos.x * ChunkSizeX * 1.00000);
+  var xmod = (Math.abs(minx)+1) * ChunkSizeX;
+  var zmod = (Math.abs(maxz)+1) * ChunkSizeZ;
+  var xmod = 0;
+  var zmod = 0;
+
+  verts.push( pos[0] + xmod  + chunk.pos.x * ChunkSizeX * 1.00000);
   verts.push(pos[1] * 1.0);
-  verts.push(pos[2] + chunk.pos.z * ChunkSizeZ * 1.00000);
+  verts.push(pos[2] -zmod + chunk.pos.z * ChunkSizeZ * 1.00000);
   return verts;
 }
 
@@ -186,9 +193,35 @@ function getBlockType(blocks, x, y, z) {
   return blockType;
 }
 
+
+function unpack4bit(arr) {
+  var ret = [];
+  for (var i=0; i< arr.length; i++) {
+    var b = arr[i];
+    ret.push(b & 0x0F);
+    ret.push((b & 0xF0) >> 4);
+  }
+  return ret;
+}
+
+function getData(blocks, x, y, z) {
+  var id = y + (z * ChunkSizeY + (x * ChunkSizeY * ChunkSizeZ)); 
+  return blocks[id]; 
+}
+
 function getColor(pos, chunk) {
   var t = getBlockType(chunk.blocks, pos[0], pos[1], pos[2]);
-  return t.rgba;
+  var s = getData(chunk.skylight, pos[0], pos[1], pos[2]);
+  var b = getData(chunk.blocklight, pos[0], pos[1], pos[2]) ;
+  var ret = [t.rgba[0], t.rgba[1], t.rgba[2], t.rgba[3]];
+
+  //1.0 - pow(0.8, 15 - max(blocklight, skylight - 11))
+  if (s<=0.001) s = 8;
+  s += 15;
+  ret[0] *= (s+b*2.0)/32.0;
+  ret[1] *= (s+b*2.0)/32.0;
+  ret[2] *= (s+b*2.0)/32.0;
+  return ret;
 }
 
 function renderVoxelLines(chunk, x, y, z) {
@@ -270,8 +303,6 @@ function addFace(p, calced, clr, i, j, k, chunk) {
     {pos:[-1,0,0], coords: [ [-0.5,0.5 ,-0.5],[-0.5,0.5,0.5],[-0.5,-0.5,0.5],[-0.5,-0.5,-0.5]]}, //left
     {pos:[1,0,0], coords: [ [0.5,0.5 ,-0.5],[0.5,0.5,0.5],[0.5,-0.5,0.5],[0.5,-0.5,-0.5]]}, //right
     {pos:[0,0,1], coords: [ [0.5,0.5,0.5],[-0.5,0.5,0.5], [-0.5,-0.5,0.5],[0.5,-0.5,0.5] ]} //back
-
-
   ];
   //postMessage('p2');
   for (var n=0; n<faces.length; n++) {
@@ -352,9 +383,12 @@ function parsechunk(data, pos) {
     var nbt = new NBTReader(dat);
     var ch = nbt.read();
     var blocks = ch.root.Level.Blocks;
+    var skylight = ch.root.Level.SkyLight;
+    var blocklight = ch.root.Level.BlockLight;
+
     var c = Object();
     c.pos = pos;
-    extractChunk(blocks, c);
+    extractChunk(blocks, skylight, blocklight, c);
     c.vertices = myworld.vertices;
     c.colors = myworld.colors;
     myworld.chunks.push(c);
@@ -372,37 +406,56 @@ function infoReceived() {
     //postMessage(output);
     
     var c = parsechunk(output, pos);
-    var tmp = { vertices: myworld.vertices, colors:myworld.colors};
+    var tmp = {wid: myid, vertices: myworld.vertices, colors:myworld.colors};
     postMessage(tmp);
+    delete httpRequest;
     close();
   } else{
     postMessage({fail:'fail'});
+    delete httpRequest;
     close();
   }
-  httpRequest = null;
+  //httpRequest = null;
 }
 
 function chunkload(url, pos) {
-  var fl = chunkfile(pos.x, pos.z);
-  if (fl != 'unindexed') {
-          var loc = url + 'getchunk.php?file=/' + 
-              encodeURIComponent(fl);
-          httpRequest = new XMLHttpRequest();  
-          httpRequest.open("GET", loc, true);  
-          httpRequest.onload = infoReceived;  
-          httpRequest.send(null);  
+  try {
+	  var fl = chunkfile(pos.x, pos.z);
+	  if (fl != 'unindexed') {
+		  var loc = url + 'getchunk.php?file=/' + 
+		      encodeURIComponent(fl);
+		  httpRequest = new XMLHttpRequest();  
+		  httpRequest.open("GET", loc, true);  
+		  httpRequest.onload = infoReceived;  
+		  httpRequest.onerror = httpErr;
+		  httpRequest.onabort = httpErr;
+		  httpRequest.send(null);  
 
-  } else {
-    postMessage({fail: 'fail', position: pos});
-    close();
+	  } else {
+	    postMessage({fail: 'fail', position: pos});
+	    delete httpRequest;
+	    close();
+	  }
+  } catch (e) {
+      delete httpRequest;
+      postMessage(e);
+      close();
   }
+}
+
+httpErr = function(e) {
+  postMessage('failhttp');
+  close();
 }
 
 errorReceiver = function(event) {
   postMessage('fail');
+  delete httpRequest;
   close();
   //log(event.data);
 };
+
+var myid;
 
 onmessage = function(event) {
   var dat = JSON.parse(event.data);
@@ -412,7 +465,7 @@ onmessage = function(event) {
   minz = dat.z0;
   maxz = dat.z1;
   pos = { x : dat.a, z :dat.b};
-  //postMessage(event.data);
+  myid = dat.wid;
   myworld.chunkIndex = dat.chunkIndex;
   chunkload(dat.url.href, pos);
 };

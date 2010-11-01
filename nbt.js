@@ -124,7 +124,7 @@ function TAG_Byte(nbtreader) {
   };
 
   this.decode = function() {
-    return this.bytes[0];
+    return this.bytes[0] ;
   };
 
    this.reader = nbtreader;

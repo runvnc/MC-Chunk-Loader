@@ -9,17 +9,13 @@ var ChunkSizeY = 128;
 var ChunkSizeZ = 16;
 var ChunkSizeX = 16;
 
-var minx = -4;
-var minz = -4;
-var maxx = 4;
-var maxz = 4;
-var ymin = 5;
 var filled = [];
+var sz = 8; //load sz x sz area
 
 function b36(n) {
   var r = "";
   
-  if (n === 0) 
+  if (n == 0) 
     r = '0';
   else 
     if (n < 0) 
@@ -273,13 +269,15 @@ var started = false;
 
 function resultReceiver(event) {
   if (started) return;
-  //console.log(event.data);
+
   //started = true;
+  //console.log(event.data);
 
+  countChunks++;
+ 
   var data = event.data;
-
+  wworkers[data.wid].terminate();
   if (!data.vertices) {
-    countChunks++;
     return;
   } else {
   }
@@ -292,17 +290,13 @@ function resultReceiver(event) {
     theworld.colors.push(data.colors[j]);
   }
 
-  countChunks++;
  
   status('Loaded ' + countChunks + ' of ' + toLoad + ' chunks'); 
    
-  if (countChunks>=toLoad -10) { 
-    //viewer.showData('dat',prettyPrint(theworld.vertices));	
+  if (countChunks>=toLoad-1) { 
     msg('total vertices: ' + theworld.vertices.length /3);
-    
-    showPlayer();
+    started = true; 
     start(theworld.vertices, theworld.colors);
-    started = true;
   }
 }
 
@@ -327,19 +321,32 @@ function showPlayer() {
 
 function errorReceiver(event) {
   countChunks++;
+  console.log('received error');
   //console.log(event.data);
 }
 
 var toLoad = 0;
 var wedone = false;
 
+function S4() {
+   return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
+}
+function guid() {
+   return (S4()+S4()+"-"+S4()+"-"+S4()+"-"+S4()+"-"+S4()+S4()+S4());
+}
+
+var wworkers = {};
+
 function loadMore(uri,posi) {
   var added = 0;
   do { 
+        var ww = guid();       
+        console.log(ww);
         var worker = new Worker("chunk.js");
+        wworkers[ww] = worker;
         worker.onmessage = resultReceiver;
         worker.onerror = errorReceiver;
-        var objstr = JSON.stringify({url: uri, x0: minx, x1:maxx, z0:minz, z1:maxz,
+        var objstr = JSON.stringify({wid:ww, url: uri, x0: minx, x1:maxx, z0:minz, z1:maxz,
                           a: posi.x, b:posi.z});
 
         worker.postMessage(objstr);
@@ -349,15 +356,22 @@ function loadMore(uri,posi) {
   if (!next.cont) wedone = true;
 }
 
+function workerClosed(event) {
+  console.log('worker closed ' + JSON.stringify(event));
+}
+
 function chunkLoadALot(uri, posi) {
   for (var i = minx; i<=maxx; i++) {  
     for (var j = minz; j<=maxz; j++) {
       if (true | chunkfile(i,j) != 'unindexed') {
         toLoad++;
+        var ww = guid();
         var worker = new Worker("chunk.js");  
+        wworkers[ww] = worker;
         worker.onmessage = resultReceiver;  
         worker.onerror = errorReceiver;  
-        var objstr = JSON.stringify({url: uri, x0: minx, x1:maxx, z0:minz, z1:maxz,
+        worker.onclose = workerClosed;
+        var objstr = JSON.stringify({wid: ww, url: uri, x0: minx, x1:maxx, z0:minz, z1:maxz,
                           a: i, b:j});
 
         worker.postMessage(objstr);  
@@ -431,9 +445,9 @@ World.prototype.init = function(cb) {
   this.vertices = [];
   this.colors = [];
   this.pos = {
-    x: minx,
+   x: 0,
     y: 64,
-    z: minz
+    z: 0
   };
   
   convertColors(); // in blockinfo.js
@@ -453,16 +467,17 @@ World.prototype.init = function(cb) {
      var posz = Math.round(w.level.Player.Pos[2] / ChunkSizeZ);
      msg('posx = ' + posx.toString());
      msg('posz = ' + posz.toString()); 
-     minx = posx-12;
-     maxx = posx+12;
-     minz = posz-12;
-     maxz = posz+12;
-     $('#xmin').val(posx - 12);
-     $('#xmax').val(posx + 12);
-     $('#zmin').val(posz - 12);
-     $('#zmax').val(posz + 12);
+     minx = posx-sz;
+     maxx = posx+sz;
+     minz = posz-sz;
+     maxz = posz+sz;
+     $('#xmin').val(posx - sz);
+     $('#xmax').val(posx + sz);
+     $('#zmin').val(posz - sz);
+     $('#zmax').val(posz + sz);
      w.chunks = [];
-
+     w.pos.x = posx;
+     w.pos.z = posz;
      status('Loading chunk index..');
      $.get(w.indexLocation, function(ind) {
         status('Index has ' + ind.length + ' chunks');

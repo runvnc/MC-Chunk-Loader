@@ -15,8 +15,22 @@ var startTime = 0;
 var pitch = 0.0;
 var yaw = 0.0;
 
+var wasloaded = false;
+var xmod;
+var zmod;
 function start(vertices, colors) {
-  posMatrix = Matrix.Translation($V(theworld.level.Player.Pos)).ensure4x4();
+  if (wasloaded) return;
+
+  wasloaded = true;
+  
+  xmod = (Math.abs(minx)+1) * ChunkSizeX;
+  zmod = (Math.abs(maxz)+1) * ChunkSizeZ;
+  
+  var ppos = theworld.level.Player.Pos;
+  //ppos[0] += xmod;
+  //ppos[2] += zmod;
+
+  posMatrix = Matrix.Translation($V(ppos)).ensure4x4();
   canvas = document.getElementById("glcanvas");
   
   initWebGL(canvas);
@@ -162,6 +176,8 @@ function drawScene() {
   campos[2] = -1 * posMatrix.elements[2][3];
   mvTranslate(campos);
 
+  //mvTranslate([xmod,0.0,zmod]);
+  
   if ($('#roton').attr('checked')===true) {
     var d = new Date();
     mvRotate((d.getTime() - startTime) / 100.0, [0.0, 1.0, 0.0]); 
@@ -182,7 +198,7 @@ function drawScene() {
   if (options.renderType == 'lines') {
     gl.drawArrays(gl.LINES, 0, vertsl / 6);
   } else if (options.renderType == 'cubes') {
-    gl.drawArrays(gl.TRIANGLES, 0, vertsl / 9);
+    gl.drawArrays(gl.TRIANGLES, 0, vertsl / 3);
   } else {  
     gl.drawArrays(gl.POINTS, 0, vertsl / 3);
   }

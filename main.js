@@ -11,14 +11,37 @@ function moveForward() {
   ps[2][3] -= dist * Math.cos(yaw * piOver180);
 }
 
+function moveUp() {
+  var ps = posMatrix.elements;
+  ps[1][3] += 1.0;
+}
+
+function moveDown() {
+  var ps = posMatrix.elements;
+  ps[1][3] -= 1.0;
+}
+
 function main() {
   viewer = new Viewer(window.location);
   
   $(document).keydown(function(event) {
-    if (event.keyCode == '87') {
-      moveForward();
-      //posMatrix = posMatrix.x(Matrix.Translation($V([0.0, 0.0, 0.1])).ensure4x4());
+    switch (event.keyCode) {
+      case 87:
+        moveForward();
+        break;
+      case 69:
+        moveUp();
+        break;
+      case 81:
+        moveDown();
+        break;
+      default:
+        break;
     }
+    //if (event.keyCode == '87') {
+    //  moveForward();
+      //posMatrix = posMatrix.x(Matrix.Translation($V([0.0, 0.0, 0.1])).ensure4x4());
+    //}
   });
   
   $('#load').click(function() {
@@ -47,9 +70,9 @@ main();
 
 $(document).ready(function() {
   var w = $(window).width();
-  w -= 25;
+  w -= 35;
   var h = $(window).height();
-  h -= 25;
+  h -= 35;
   $('#canvashere').html('<canvas id="glcanvas" width="' + w.toString() + 
                         '" height="' + h.toString() + '" ></canvas>');
 });

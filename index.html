@@ -56,7 +56,7 @@ float rand(vec3 co){
 
       
 void main(void) {
-    if ((vColor[0]>vColor[1] &&
+   /* if ((vColor[0]>vColor[1] &&
          vColor[1]>vColor[2])  ) {
 
         float offset = -fTime;
@@ -67,9 +67,9 @@ void main(void) {
         float m = mod(offset, 7.0);
         
         gl_FragColor = vColor + m/11.0 ;
-    } else {
+    } else { */
         gl_FragColor = vColor;
-    }  
+    //}  
 }
 </script> 
     
@@ -100,10 +100,12 @@ void main(void) {
   float dist = distance(pos2, light);
   
   vColor = aVertexColor;
-  float dist2 = dist / 15.0;
-  vColor[0] *= (1.0/dist2) * 1.1;
-  vColor[1] *= (1.0/dist2) * 1.1;
-  vColor[2] *= (1.0/dist2) * 1.1;
+
+  float dist2 = dist / 40.0;
+  float m = (1.0/dist2);
+  vColor[0] *= m;
+  vColor[1] *= m;
+  vColor[2] *= m;
 
   //gl_PointSize *= 1.0/(gl_Position.z/25.0);
 
