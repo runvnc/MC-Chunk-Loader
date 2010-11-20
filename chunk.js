@@ -83,6 +83,7 @@ function extractChunk(blocks, skylight, blocklight, chunk) {
   chunk.filled = [];
   chunk.skylight = unpack4bit(skylight);
   chunk.blocklight = unpack4bit(blocklight);
+  return;
 
   for (x = 0; x < ChunkSizeX; x++) {
     for (z = 0; z < ChunkSizeZ; z++) {
@@ -118,7 +119,7 @@ function extractChunk(blocks, skylight, blocklight, chunk) {
     } // z
   } // x 
   //countChunks++;
-  renderChunk(chunk);
+  //renderChunk(chunk);
 }
 
 
@@ -240,9 +241,43 @@ function renderVoxelLines(chunk, x, y, z) {
   return true;    
 }
 
+/*
+function isNotNatural(chunk, x, y, z) {
+  var blockType = getBlockType(chunk.blocks, x, y, z);
+  return (blockType.type != 'cobble' && 
+          blockType.type != 'wood' && 
+          blockType.type != 'torch');
+}*/
+
 function renderVoxelCube(chunk, x, y, z) {
-  addCube([x,y,z], chunk);
+  /*
+  if (isNotNatural(chunk, [x,y,z]) {
+    addCube([x,y,z], chunk);
+  } else {
+   //  addTriangles([x,y,z], chunk);
+  }
+  */
 }
+
+
+function addTriangles(chunk, x, y, z) {
+  for (i = x + 1; i < x + 2 & i < ChunkSizeX; i++) {
+    for (j = y - 1; j < y + 2; j++) {
+      for (k = z + 1; k < z + 2 & k < ChunkSizeZ; k++) {
+        if (!(i == x && j == y && k == z)) {
+          var blockType = getBlockType(chunk.blocks, i,j,k);
+          if (isNatural(blockType)) {
+                        
+            addLine([x, y, z], [i, j, k], chunk);
+          }
+        }
+      }
+    }
+  }
+  return true;
+}
+
+
 
 function renderVoxelPoints(chunk, x, y, z) {
   addPoint([x,y,z], chunk);
@@ -294,6 +329,7 @@ function addFace(p, calced, clr, i, j, k, chunk) {
 
   var typ = getBlockType(chunk.blocks, p[0]+ i,p[1]+j,p[2]+k);
   if (typ.id > 0) return;
+  var typ2 = getBlockType(chunk.blocks, p[0], p[1], p[2]);
   //postMessage('x2');
   //if 0,1,0 say this is top face
   var faces = [
@@ -314,7 +350,7 @@ function addFace(p, calced, clr, i, j, k, chunk) {
         var crd = f.coords[q];
         qs.push([crd[0]+calced[0], crd[1]+calced[1], crd[2]+calced[2]]);
       }
-      addQuad(qs, clr);
+      addQuad(qs, clr, typ2);
       return;
     }
   }
@@ -326,17 +362,15 @@ function addCoords(v) {
   myworld.vertices.push(v[2]);
 }
 
-function addQuad(points, color) {
+function addQuad(points, color, typ) {
   //postMessage('adding quad' ); 
   
   addCoords(points[0]);
   addCoords(points[1]);
   addCoords(points[2]);
-  addCoords(points[2]);
-  addCoords(points[3]);
-  addCoords(points[0]);
+ 
   for (var c=0; c<4; c++) {
-    myworld.colors.push(color[c]);
+     myworld.colors.push(color[c]);
   }
   for (var c=0; c<4; c++) {
     myworld.colors.push(color[c]);
@@ -344,7 +378,25 @@ function addQuad(points, color) {
   for (var c=0; c<4; c++) {
     myworld.colors.push(color[c]);
   }
-
+ 
+  if (typ.id==18) {
+    
+  } else {
+    addCoords(points[2]);
+    addCoords(points[3]);
+    addCoords(points[0]);
+ 
+    for (var c=0; c<4; c++) {
+      myworld.colors.push(color[c]);
+    }
+    for (var c=0; c<4; c++) {
+      myworld.colors.push(color[c]);
+    }
+    for (var c=0; c<4; c++) {
+      myworld.colors.push(color[c]);
+    }
+  }
+/*
  for (var c=0; c<4; c++) {
     myworld.colors.push(color[c]);
   }
@@ -354,7 +406,7 @@ function addQuad(points, color) {
   for (var c=0; c<4; c++) {
     myworld.colors.push(color[c]);
   }
-
+*/
 
   //postMessage(myworld.colors);
   //close();
@@ -404,9 +456,9 @@ function infoReceived() {
   var output = httpRequest.responseText;
   if (output) {
     //postMessage(output);
-    
     var c = parsechunk(output, pos);
-    var tmp = {wid: myid, vertices: myworld.vertices, colors:myworld.colors};
+    c.pos = pos;
+    var tmp = {wid: myid, vertices: myworld.vertices, colors:myworld.colors, chunk:c};
     postMessage(tmp);
     delete httpRequest;
     close();

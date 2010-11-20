@@ -4,13 +4,13 @@
 //requires util
 //requires blockinfo
 
-var theworld = {vertices: [], colors: []};
+var theworld = {vertices: [], colors: [], blocks: {}, chunks: []};
 var ChunkSizeY = 128;
 var ChunkSizeZ = 16;
 var ChunkSizeX = 16;
 
 var filled = [];
-var sz = 8; //load sz x sz area
+var sz =1; //load sz x sz area
 
 function b36(n) {
   var r = "";
@@ -262,6 +262,123 @@ function ifLastChunk(x, z) {
   //}
 }
 
+function addBlocks(blocks) {
+  for (x = 0; x < ChunkSizeX; x++) {
+    for (z = 0; z < ChunkSizeZ; z++) {
+      for (y = ymin; y < ChunkSizeY; y++) {
+        var blockID = blocks[y + (z * ChunkSizeY + (x * ChunkSizeY * ChunkSizeZ))];
+        var blockType = blockInfo['_-1'];
+        theworld.blocks[x + ',' + y + ',' + z] = blockType;   
+      }
+    }
+  } 
+}
+
+var blockbytes;
+
+function initblockbuffer() {
+  var sizex = maxx - minx;
+  var sizey = 64;
+  var sizez = maxz - minz;
+  var arraysize = sizex * sizey * sizez;
+  blockbytes = new Uint8Array(arraysize);
+}
+
+function blocksToBuffer(chunk) {
+  //figure out what offset we need to add based on the position of the chunk
+  //add all the blocks into the array
+  //update blockbytes
+
+  var offsetx = Math.abs(chunk.pos.x - minx);
+  var offsetz = Math.abs(chunk.pos.z - minz); 
+  var offset = offsetx * ChunkSizeY * ChunkSizeZ + offsetz * ChunkSizeY;
+  for (var i=0; i<chunk.blocks.length; i++) {
+    blockbytes[offset + i] = chunk.blocks[i];
+  } 
+}
+
+
+function makeTerrain() {
+  for (var b in theworld.blocks) {
+    var coord = getCoord(b);
+    var block = theworld.blocks[b];
+    connectNear(coord);
+  }
+}
+
+function getCoord(blockkey) {
+  var c = blockkey.split(',');
+  return [parseFloat(c[0]), parseFloat(c[1]), parseFloat(c[2])];
+}
+
+function getNearbyBlocks(coord) {
+    var x=coord[0];
+    var y=coord[1];
+    var z=coord[2];
+    var ret = [];
+    for (i = x + 1; i < x + 2 & i < ChunkSizeX; i++) {
+    for (j = y - 1; j < y + 2; j++) {
+      for (k = z + 1; k < z + 2 & k < ChunkSizeZ; k++) {
+        if (!(i == x && j == y && k == z)) {
+          var key = i+','+j+','+k;
+          if (theworld.blocks.hasOwnProperty(key));   
+            ret.push({coord: key, block: theworld.blocks[key]});
+        }
+      }
+    }
+  }
+  return ret; 
+}
+
+function isNotPartOfTriangle(nearby) {
+  for (var k in triangles) {
+    if (k.indexOf('['+nearby.coord+']')) return false;
+  }
+  for (var k in trianglesStarted) {
+    if (k.indexOf('['+nearby.coord+']')) return false;
+  }
+  return true;
+}
+
+function startTriangle(coord, nearby) {
+  trianglesStarted['['+coord[0]+','+coord[1]+','+coord[2]+']['+nearby.coord+']'] = nearby; 
+}
+
+function tryMakeTriangle(nearby) {
+  //if there is an adjacent point
+  //in trianglestarted
+  //and is not in triangles
+  //then add it to triangles
+  //and add the actual triangle vertices
+  //and colors
+}
+
+function connectNear(coord) {
+  trianglesStarted = {};
+  var nearBy = getNearbyBlocks(coord);
+  var remaining = [];
+  for (var n=0; n<nearBy.length; n++) {
+    remaining.push(nearBy[n]);
+  }
+  for (var i=0; i<nearBy.length; i++) {
+    if (isNotPartOfTriangle(nearBy[i])) {
+      startTriangle(coord, nearBy[i]);
+      for (var r=0; r<remaining.length; r++) {
+        if (tryMakeTriangle(remaining[r])) 
+          break;
+      }
+    }
+  }
+}
+
+//find any three adjacent voxels
+//connect them if they are not already connected
+
+//test each voxel
+
+
+
+
 var countChunks = 0;
 var chunki;
 var chunkj;
@@ -290,14 +407,27 @@ function resultReceiver(event) {
     theworld.colors.push(data.colors[j]);
   }
 
- 
+  blocksToBuffer(data.chunk);
+   
   status('Loaded ' + countChunks + ' of ' + toLoad + ' chunks'); 
    
   if (countChunks>=toLoad-1) { 
     msg('total vertices: ' + theworld.vertices.length /3);
     started = true; 
-    start(theworld.vertices, theworld.colors);
+    webGLStart();
+    //makeDummyGeometry();
+    //start(theworld.vertices, theworld.colors);
   }
+}
+
+function makeDummyGeometry() {
+  theworld.vertices.push([-0.0, 1.0, 10.0]);
+  theworld.vertices.push([-1.0,-1.0,10.0]);
+  theworld.vertices.push([1.0,-1.0,10.0]);
+  theworld.colors.push(1.0);
+  theworld.colors.push(1.0);
+  theworld.colors.push(1.0);
+  theworld.colors.push(1.0);	
 }
 
 function addPoint2(p, c) {
@@ -322,7 +452,7 @@ function showPlayer() {
 function errorReceiver(event) {
   countChunks++;
   console.log('received error');
-  //console.log(event.data);
+  console.log(event.data);
 }
 
 var toLoad = 0;
@@ -361,9 +491,10 @@ function workerClosed(event) {
 }
 
 function chunkLoadALot(uri, posi) {
+  initblockbuffer();
   for (var i = minx; i<=maxx; i++) {  
     for (var j = minz; j<=maxz; j++) {
-      if (true | chunkfile(i,j) != 'unindexed') {
+      if (true || chunkfile(i,j) != 'unindexed') {
         toLoad++;
         var ww = guid();
         var worker = new Worker("chunk.js");  

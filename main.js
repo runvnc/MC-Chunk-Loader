@@ -1,6 +1,6 @@
 var viewer;
 var options = { renderType: 'cubes' };
-
+var windows3d = [];
 
 var piOver180 = Math.PI / 180;
 function moveForward() {
@@ -35,6 +35,14 @@ function main() {
       case 81:
         moveDown();
         break;
+      case 191:
+        $('#trace').toggle();
+        $('#promptx').toggle();
+        if( $('#promptx').is(':visible') ) {
+          $('#cmd').focus();
+        } else {
+        }
+        return false;
       default:
         break;
     }
@@ -68,13 +76,39 @@ window.onload = function() {
 
 main();
 
+function runCommand(cmd) {
+  msg('> ' + cmd);
+  var t = cmd.split(' ');
+  switch (t[0]) {
+    case 'win':
+      $.newWindow({id:'win1',posx:winx,posy:winy,width:50,height:20, title:'test',content:'hi'});
+      windows3d.push($('#win1')[0]);
+      msg('created window');
+      break;
+    default:
+      break;
+  }
+  eraseCmd();
+}
+
+function eraseCmd() {
+  $('#cmd').val('');
+}
+
 $(document).ready(function() {
   var w = $(window).width();
   w -= 35;
   var h = $(window).height();
-  h -= 35;
+  h -=85;
   $('#canvashere').html('<canvas id="glcanvas" width="' + w.toString() + 
                         '" height="' + h.toString() + '" ></canvas>');
+
+  $('#cmd').keypress(function(event) {
+    if (event.which===13) {
+      runCommand($('#cmd').val());
+    }
+  });
+  windows3d.push($('#conwin')[0]);
 });
 
 
