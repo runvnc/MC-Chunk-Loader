@@ -71,11 +71,30 @@ body, p, span, td, div {
 <!-- Fragment shader program --> 
  
 <script id="shader-fs" type="x-shader/x-fragment"> 
+
   #ifdef GL_ES
   precision highp float;
   #endif
 
+#pragma optimize(off)
+
+//layout(origin_upper_left, pixel_center_integer) in vec4 gl_FragCoord;
+
 uniform float fTime;
+uniform float ScreenHeight;
+uniform float ScreenWidth;
+
+uniform int ChunksX;
+uniform int ChunksY;
+uniform int ChunksZ;
+uniform int BlocksW;
+
+uniform sampler2D blocksTexture;
+
+#define ChunkSizeX 16.0;
+#define ChunkSizeZ 16.0;
+#define ChunkSizeY 64.0;
+
 
 /*
  * Noise GLSL Author: Stefan Gustavson ITN-LiTH (stegu@itn.liu.se) 2004-12-05
@@ -94,6 +113,7 @@ uniform sampler2D permTexture;
  * To create offsets of one texel and one half texel in the
  * texture lookup, we need to know the texture image size.
  */
+
 #define ONE 0.00390625
 #define ONEHALF 0.001953125
 // The numbers above are 1/256 and 0.5/256, change accordingly
@@ -234,14 +254,121 @@ float snoise(vec3 P) {
   // Sum up and scale the result to cover the range [-1,1]
   return 32.0 * (n0 + n1 + n2 + n3);
 }  
+
+
+vec4 colorByType(float blockID) {
+  vec4 r;
+  int id = int(blockID * 255.0); 
+  if (id==0) {
+    r = vec4(0.0,0.0,0.0,0.0); 
+  } else if (id==1) {
+    r = vec4(0.3,0.3,0.3,1.0);  
+  } else if (id==2) { 
+    r = vec4(0.0,0.9,0.0,1.0);
+  } else if (id==3) {
+    r = vec4(0.3,0.05,0.05,1.0);
+  } else if (id==4) {
+    r = vec4(0.25,0.27,0.25,1.0);
+  } else if (id==8) {
+    r = vec4(0.0, 0.2, 0.8, 1.0);
+  } else if (id==9) {
+    r = vec4(0.0, 0.2, 0.8, 1.0);
+  } else if (id==10) {
+    r = vec4(0.8,0.2,0.2,1.0);
+  } else if (id==12) {
+    r = vec4(float(0xEE)/255.0, float(0xD6)/255.0, float(0xAF)/255.0, 1.0);
+  } else if (id==18) {
+    r = vec4(0.0,0.4,0.0,1.0);
+  } else {
+    //r = vec4(0.0,0.0,0.2,1.0); 
+    r = vec4(blockID, blockID, blockID, 1.0);
+  } 
+  return r; 
+}
+
  
-  void main(void) {
-    //gl_FragColor = texture2D(permTexture, vec2(12,5));
-    float scroll = fTime / 2000.0;
-    float sc = 1000.0 * cos(mod(scroll/2.0,2.0 * 3.1459))+200.0;
-    gl_FragColor = vec4(snoise(vec3((gl_FragCoord.x-500.0+scroll*100.0)/sc+ scroll,gl_FragCoord.y/sc+scroll,gl_FragCoord.z/sc+scroll)),
-                        snoise(vec3(gl_FragCoord.z/sc+scroll,(gl_FragCoord.x-500.0+scroll*100.0)/sc+scroll,gl_FragCoord.y/sc+scroll)), snoise(vec3(gl_FragCoord.z/sc+scroll,gl_FragCoord.y/sc+scroll,(gl_FragCoord.x-500.0+scroll*100.0)/sc+scroll)), 1.0);
+ivec2 texelCoord(int offset) {
+  //convert from 1 dimensional data offset
+  //to 2 dimensional offset into rgba texture
+  int rgbaOffset = offset / 4;
+  int y = int(rgbaOffset / (BlocksW));  
+  int x = int(mod(float(rgbaOffset), float(BlocksW)));
+  return ivec2(x, y);
+}
+
+vec4 colorAt(int x, int y) {
+  float u = float(x)/float(BlocksW);
+  float v = float(y)/float(BlocksW);
+
+  //float u = (float(x)+0.5)/float(BlocksW);
+  //float u = ((2.0*float(x))+1.0)/(2.0*float(BlocksW));
+  //float v = ((2.0*float(y))+1.0)/(2.0*float(BlocksW));
+  //float v = (float(y)+0.5)/float(BlocksW);
+  return texture2D(blocksTexture, vec2(u,v));
+}
+
+vec4 colorData(int offset) {
+  ivec2 tCoord = texelCoord(offset);
+  int which = int(mod(float(offset), 4.0));
+  vec4 color = colorAt(tCoord.x, tCoord.y);
+  return colorByType(color[which]);
+}
+
+
+int blockByOffset(int offset) {
+  ivec2 tCoord = texelCoord(offset);
+  int which = int(mod(float(offset), 4.0));
+  vec4 color = colorAt(tCoord.x, tCoord.y);
+  return int(color[which] * 255.0);
+}
+
+vec4 blockAt(vec3 p) {
+  if (p.x > float(ChunksX) ||
+      p.z > float(ChunksZ) ||
+      p.x < 0.0 ||
+      p.z < 0.0) {
+    return vec4(0.0,0.0,0.07,1.0);
   }
+  int index1D = int(p.y) + (int(p.z) * ChunksY + (int(p.x) * ChunksY * ChunksZ));
+  return colorData(index1D);
+}
+
+
+float nl() {
+  int k=0;
+  if (1>k) {
+    return 0.0;
+  }
+}
+
+
+vec4 debugOutput() {
+  ivec2 t = texelCoord(4);
+  /*
+  vec4 test = colorAt(0,0);
+  if (test.r==10.0/255.0) 
+    return vec4(1.0,0.0,0.0,1.0);
+  else
+    return vec4(0.0,0.0,1.0,1.0);
+  */
+  
+  vec4 astatwater = blockAt(vec3(2,55,2));
+  //return vec4(99.0/255.0, float(blockByOffset(399))/255.0,
+  //            float(blockByOffset(400))/255.0, float(blockByOffset(401))/255.0);
+  if (astatwater.b == 0.8) 
+    return vec4(1.0,0.0,0.0,1.0);
+  else
+    return vec4(0.0,0.0,1.0,1.0);
+}
+
+void main(void) { 
+  //gl_FragColor = debugOutput();
+  float sc = 1.0;
+  float y = mod(fTime / 200.0, 60.0);
+  gl_FragColor = blockAt(vec3(gl_FragCoord.x/sc, 55.0, gl_FragCoord.y/sc));
+}
+  
+
 </script> 
  
 <script id="shader-vs" type="x-shader/x-vertex"> 

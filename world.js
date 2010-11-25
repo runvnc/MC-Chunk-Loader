@@ -10,7 +10,7 @@ var ChunkSizeZ = 16;
 var ChunkSizeX = 16;
 
 var filled = [];
-var sz =1; //load sz x sz area
+var sz =2; //load sz x sz area
 
 function b36(n) {
   var r = "";
@@ -277,25 +277,111 @@ function addBlocks(blocks) {
 var blockbytes;
 
 function initblockbuffer() {
-  var sizex = maxx - minx;
-  var sizey = 64;
-  var sizez = maxz - minz;
+  var sizex = (Math.abs(maxx - minx)+1) * ChunkSizeX;
+  var sizey = (128-62)+1;
+  var sizez = (Math.abs(maxz - minz)+1) * ChunkSizeZ;
   var arraysize = sizex * sizey * sizez;
-  blockbytes = new Uint8Array(arraysize);
+  msg('arraysize is ' + arraysize);
+  var n = 128;
+  while (n*n <arraysize) {
+    n *= 2;
+  } 
+  theworld.blocksw = n;
+  theworld.blocksh = n;
+  var arraysize2 = n * n;
+  blockbytes = new Array();
+  for (var x=0; x<arraysize2; x++) blockbytes.push(10);
+}
+
+var chunksX;
+var chunksZ;
+var chunksY;
+
+function setWorldBlock(x,y,z, typ) {
+  chunksX = (Math.abs(maxx-minx)+1) * ChunkSizeX;
+  chunksZ = (Math.abs(maxz-minz)+1) * ChunkSizeZ;
+  chunksY = 128 - 62+1;
+  y = y-62;
+  var index = y + (z * chunksY + (x * chunksY * chunksZ));
+  blockbytes[index] = typ;
+}
+
+
+function getWorldBlock(x,y,z) {
+  chunksX = (Math.abs(maxx-minx)+1) * ChunkSizeX;
+  chunksZ = (Math.abs(maxz-minz)+1) * ChunkSizeZ;
+  chunksY = 128 - 62+1;
+  y = y-62;
+  var index = y + (z * chunksY + (x * chunksY * chunksZ));
+  return blockbytes[index];
+}
+
+
+
+//how do I retrieve from world blocks
+//using three coordinates?
+
+var datstr = "";
+
+function chunkToWorld(chunkpos, x,y,z) {
+  var retpos = new Object();
+  var offsetX = -minx;
+  var offsetZ = -minz;
+  var offsetY = -62;
+  retpos.x = (offsetX + chunkpos.x) * ChunkSizeX + x;
+  retpos.z = (offsetZ + chunkpos.z) * ChunkSizeZ + z;
+  retpos.y = offsetY + y;
+  return retpos;
 }
 
 function blocksToBuffer(chunk) {
-  //figure out what offset we need to add based on the position of the chunk
-  //add all the blocks into the array
-  //update blockbytes
-
-  var offsetx = Math.abs(chunk.pos.x - minx);
-  var offsetz = Math.abs(chunk.pos.z - minz); 
-  var offset = offsetx * ChunkSizeY * ChunkSizeZ + offsetz * ChunkSizeY;
-  for (var i=0; i<chunk.blocks.length; i++) {
-    blockbytes[offset + i] = chunk.blocks[i];
-  } 
+  var typ;
+  for (var x=0; x<ChunkSizeX; x++) {
+    for (var z=0; z<ChunkSizeZ; z++) {
+      for (var y=62; y<ChunkSizeY; y++) {
+        typ = getBlockType(chunk.blocks, x,y,z);
+        var id = typ.id;
+        if (typ.id==-10) id =0;
+        var worldpos = chunkToWorld(chunk.pos, x,y,z);
+        setWorldBlock(worldpos.x,worldpos.y,worldpos.z, id);
+      }
+    }
+  }
 }
+
+//chunk array: 
+//layout is -x |z /y
+//dimensions are 16 x 16 x 128
+//basically a series of vertical columns
+//from bottom to top
+//first is at x=0, z=0
+//second is at x=0, z=1
+//I am only doing the top half
+//of the world so y=62 to 127
+
+
+//world array:
+//layout is -x |z /y
+//dimensions are (number of chunks in x direction) * 16  
+//by (number of chunks in z direction) * 16
+//by 64
+//issue with world array:
+//need the width and height
+//to be powers of 2
+//so right and bottom edge of array
+//will be zeroes
+
+
+//so what I am trying to do
+//is to take a chunk full of data
+//and add it to my world array
+//for each block in the chunk
+//retrieve the block type
+//find the correct index for the world array
+//add it to the world array at that index
+
+//instead of a bunch of chunk arrays 
+
 
 
 function makeTerrain() {
@@ -376,9 +462,6 @@ function connectNear(coord) {
 
 //test each voxel
 
-
-
-
 var countChunks = 0;
 var chunki;
 var chunkj;
@@ -413,7 +496,18 @@ function resultReceiver(event) {
    
   if (countChunks>=toLoad-1) { 
     msg('total vertices: ' + theworld.vertices.length /3);
-    started = true; 
+    started = true;  
+
+    msg('(2,55,2) = 9');
+    setWorldBlock(2,55,2,9);
+
+    theworld.blocks = new Uint8Array(blockbytes);
+    theworld.blocks.set(blockbytes);
+    msg('blocksw = ' + theworld.blocksw);
+    msg('chunksX = ' + chunksX);
+    msg('chunksY = ' + chunksY);
+    msg('chunksZ = ' + chunksZ);
+    msg('blocks[0] = ' + theworld.blocks[0]);
     webGLStart();
     //makeDummyGeometry();
     //start(theworld.vertices, theworld.colors);

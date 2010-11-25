@@ -66,7 +66,7 @@ function initPermPixels()
 
  function handleLoadedTexture(texture, bytes, w, h) {
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    
+    msg('handleLoaded  w='+w+' h=' +h);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -85,10 +85,11 @@ function initPermPixels()
     permTexture = gl.createTexture();
     handleLoadedTexture(permTexture, permBytes, 256, 256);
 
-    blocksBytes = new Uint8Array(theworld.blocks);
-    permTexture = gl.createTexture();
-    handleLoadedTexture(blocksTexture, blocksBytes, theworld.blocksw, theworld.blocksh);    
-
+    blocksTexture = gl.createTexture();
+    theworld.blocks[0] = 51;
+    theworld.blocks[1] = 102;
+    handleLoadedTexture(blocksTexture, theworld.blocks, theworld.blocksw/4, theworld.blocksh/4);    
+    //console.log(JSON.stringify(theworld.blocks));
   }
  
   function getShader(gl, id) {
@@ -150,8 +151,13 @@ function initPermPixels()
     shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
     shaderProgram.permUniform = gl.getUniformLocation(shaderProgram, "permTexture");
     shaderProgram.blocksUniform = gl.getUniformLocation(shaderProgram, "blocksTexture"); 
+    shaderProgram.blocksWUniform = gl.getUniformLocation(shaderProgram, "BlocksW");
+    shaderProgram.ChunksXUniform = gl.getUniformLocation(shaderProgram, "ChunksX");   
+    shaderProgram.ChunksYUniform = gl.getUniformLocation(shaderProgram, "ChunksY"); 
+    shaderProgram.ChunksZUniform = gl.getUniformLocation(shaderProgram, "ChunksZ");
+    shaderProgram.ScreenHeightUniform = gl.getUniformLocation(shaderProgram, "ScreenHeight");
+    shaderProgram.ScreenWidthUniform = gl.getUniformLocation(shaderProgram, "ScreenWidth");
   }
- 
  
   var mvMatrix;
  
@@ -209,7 +215,7 @@ function initPermPixels()
     squareVertexPositionBuffer.itemSize = 3;
     squareVertexPositionBuffer.numItems = 4;
   }
- 
+
  
   function drawScene() {
     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
@@ -228,13 +234,27 @@ function initPermPixels()
     gl.bindTexture(gl.TEXTURE_2D, permTexture);  
     gl.uniform1i(shaderProgram.permUniform, 0);
 
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, blocksTexture);
+    gl.uniform1i(shaderProgram.blocksUniform, 1);
+
+    gl.uniform1i(shaderProgram.blocksWUniform, theworld.blocksw/4);
+    
+    var chunksX = (Math.abs(maxx-minx)+1) * ChunkSizeX;
+    var chunksY = 128 - 62+1;
+    var chunksZ = (Math.abs(maxz-minz)+1) * ChunkSizeZ;
+
+    gl.uniform1i(shaderProgram.ChunksXUniform, chunksX);
+    gl.uniform1i(shaderProgram.ChunksYUniform, chunksY); 
+    gl.uniform1i(shaderProgram.ChunksZUniform, chunksZ);
+    gl.uniform1f(shaderProgram.ScreenHeightUniform, gl.viewportHeight);
+    gl.uniform1f(shaderProgram.ScreenWidthUniform, gl.viewportWidth);
+
     gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
     setMatrixUniforms();
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
   }
- 
- 
  
   function webGLStart() {
     var canvas = document.getElementById("glcanvas");

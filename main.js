@@ -76,6 +76,28 @@ window.onload = function() {
 
 main();
 
+var fragpixels;
+
+function fdebug() {
+ if(!fragpixels){
+   fragpixels = new Uint8Array((theworld.blocksw/4) * (theworld.blocksw/4) * 4);
+   gl.readPixels(0, 0, theworld.blocksw/4, theworld.blocksw/4, gl.RGBA, gl.UNSIGNED_BYTE, fragpixels);
+ }
+ var fragdata = "";
+ var start =false;
+ n = 0;
+ do {
+   if (fragpixels[n]==99) start = true;
+   n++;
+ } while (!(start || n>fragpixels.length));
+ 
+ for (var n=0; n<16; n++) {
+   if (n>0) fragdata += ', ';
+   fragdata += fragpixels[n];
+ }
+ msg('fragdata = ' + fragdata);
+}
+
 function runCommand(cmd) {
   msg('> ' + cmd);
   var t = cmd.split(' ');
@@ -84,6 +106,9 @@ function runCommand(cmd) {
       $.newWindow({id:'win1',posx:winx,posy:winy,width:50,height:20, title:'test',content:'hi'});
       windows3d.push($('#win1')[0]);
       msg('created window');
+      break;
+    case 'fdbg':
+      fdebug();
       break;
     default:
       break;
