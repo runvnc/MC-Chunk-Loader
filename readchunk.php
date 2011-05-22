@@ -1,5 +1,6 @@
 <?php
 ini_set('display_errors', true);
+ini_set('memory_limit', '200M');
 
 $wf = $_SERVER['SCRIPT_FILENAME'];
 $pos = strrpos($wf, '/');
@@ -91,4 +92,32 @@ function jsonChunkOut($posx, $posz) {
     return true;
   }
 }
+
+function jsonMultipleOut($list) {
+  global $CHUNK_DIR;
+  $combined = array();
+  $count = count($list);
+  for ($i=0; $i<$count; $i++) {
+    $chunk = $list[$i];
+    if (array_key_exists('x', $chunk)) {
+      $posx = $chunk->x;
+      $posz = $chunk->z;
+      $chunkFile = $CHUNK_DIR . "c.$posx.$posz.json";
+      if(file_exists($chunkFile)) {
+        $chunkData = json_decode(file_get_contents($chunkFile));
+      } else {
+        $chunkData = readChunk($posx, $posz);
+        $cf = fopen($chunkFile, 'wb');
+        fwrite($cf, json_encode($chunkData));
+        fclose($cf);
+      }
+      $combined[] = $chunkData;
+    }
+  }
+  $gz = gzencode(json_encode($combined));
+  echo $gz;
+  return true;
+}
+
+
 ?>

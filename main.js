@@ -1,6 +1,11 @@
 var viewer;
+var loader;
 var options = { renderType: 'points' };
-
+var ymin;
+var minx;
+var maxx;
+var minz;
+var maxz;
 function main() {
   viewer = new Viewer(window.location);
   
@@ -11,15 +16,19 @@ function main() {
   });
   
   $('#load').click(function() {
-    minx = new Number($('#xmin').val());
-    minz = new Number($('#zmin').val());
-    maxx = new Number($('#xmax').val());
-    maxz = new Number($('#zmax').val());
-    ymin = new Number($('#ymin').val());
+    minx = $('#xmin').val()*1;
+    minz = $('#zmin').val()*1;
+    maxx = $('#xmax').val()*1;
+    maxz = $('#zmax').val()*1;
+    ymin = $('#ymin').val()*1;
 
     theworld.pos.x = new Number(minx);
     theworld.pos.z = new Number(minz);
-    viewer.world.loadArea();
+    //viewer.world.loadArea();
+    start();
+    viewer.world.createWorkers();
+    
+    loader = setTimeout('viewer.world.loadAll()', 1000);
   });
 
   viewer.init();

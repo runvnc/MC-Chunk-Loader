@@ -9,6 +9,7 @@ var theworld;
 var ChunkSizeY = 128;
 var ChunkSizeZ = 16;
 var ChunkSizeX = 16;
+var cores = 4;
 
 var minx = -4;
 var minz = -4;
@@ -16,8 +17,10 @@ var maxx = 4;
 var maxz = 4;
 var ymin = 5;
 var filled = [];
+var workers;
 
 var countChunks = 0;
+var toload = 0;
 
 function transNeighbors(blocks, x, y, z) {
   for (i = x - 1; i < x + 2 & i < ChunkSizeX; i++) {
@@ -242,6 +245,7 @@ function loadArea() {
  
   chunkLoad(theworld.url, theworld.pos, function(chunk) {
     if (countChunks % 2 === 0) msg('loaded chunk at ' + theworld.pos.x + ', ' + theworld.pos.z);
+    addModelData(chunk);
     theworld.pos = nextChunk(theworld.pos);
     if (theworld.pos.cont) {
       theworld.loadArea();
@@ -250,10 +254,92 @@ function loadArea() {
       $('#trace').animate({
         height: 'toggle'
       });
+      addModelData(theworld);
       start(theworld.vertices, theworld.colors);
     }
   });
 }
+
+var numloaded = 0;
+  function createWorkers() {
+    console.log('creating workers');
+    var region = this;
+    workers = [];
+    for (var i = 0; i<cores; i++) {
+      var worker = new Worker('chunkworker.js');
+      workers.push(worker);
+      worker.onmessage = function(event) {
+        var obj = event.data;
+        if (obj.type == "ready") {
+          //console.log('worker ready');
+          worker.waiting = true;  
+        } else if (obj.type=="model") {
+          numloaded++;
+          addModelData(obj.data);
+        } else if (obj.type=='workererror') {
+          console.log('worker error:');
+          console.log(obj.data);
+        } else if (obj.type=='msg') {
+          msg(obj.data);
+        }
+      }
+      
+      worker.postMessage({type:'init', url:this.url.href, mminx:minx, mmaxx:maxx,
+                          mminz:minz, mmaxz:maxz});
+    }
+    console.log('done creating workers');
+    return true;
+  }
+
+var workerNum = 0;
+
+function nextWorker() {
+  var ret = workerNum;
+  workerNum++;  
+  if (workerNum>=workers.length) {
+    workerNum = 0;
+  }
+  return workers[workerNum];
+}
+
+var l = 0;
+var pos;
+var loading = false;
+
+function loadAll() {
+  var tot = (maxx - minx) * (maxz-minz);
+  if (loading) return;
+  loading = true;
+  theworld.pos.cont = true;
+  var positions = [];
+  if (!pos) pos = theworld.pos;
+  var worker = nextWorker();
+  for (var n=0; n<12; n++) { 
+    if (pos.cont) {
+      if (l==0) {
+        pos = nextChunk(theworld.pos);
+      } else {
+        pos = nextChunk(pos);
+      }
+      positions.push({x:pos.x, z: (pos.z*1)});
+      toload++;
+    } else {
+    
+    }
+  }
+  if (positions.length == 0) {
+    msg('Loading..');
+    return;
+  }
+  
+  var dat = {positions:positions,minx:minx,maxx:maxx,minz:minz,maxz:maxz,ymin:ymin};
+  worker.postMessage({type:'loadpos', data:dat});
+  setTimeout('viewer.world.loadAll()', 10);
+
+  l++;
+  loading = false;
+}
+
 
 function World(url, index) {
   this.url = url;
@@ -288,10 +374,11 @@ World.prototype.init = function(cb) {
     var posz = Math.round(w.level.Player.Pos[2] / ChunkSizeZ);
     msg('posx = ' + posx.toString());
     msg('posz = ' + posz.toString()); 
-    $('#xmin').val(posx - 3);
-    $('#xmax').val(posx + 3);
-    $('#zmin').val(posz - 3);
-    $('#zmax').val(posz + 3);
+    $('#xmin').val(posx - 24);
+    $('#xmax').val(posx + 24);
+    $('#zmin').val(posz - 24);
+    $('#zmax').val(posz + 24);
+    
     w.chunks = [];
     cb(theworld);
   });
@@ -301,5 +388,7 @@ World.prototype.chunksToPoints = function() {
 
 };
 
-World.prototype.loadArea = loadArea;
+World.prototype.loadAll = loadAll;
+
+World.prototype.createWorkers = createWorkers;
 

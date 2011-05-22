@@ -2,8 +2,6 @@
 
 var canvas;
 var gl;
-var squareVerticesBuffer;
-var squareVerticesColorBuffer;
 var mvMatrix;
 var posMatrix;
 var shaderProgram;
@@ -12,10 +10,9 @@ var vertexColorAttribute;
 var perspectiveMatrix;
 var scl = 1;
 var startTime = 0;
+var models = [];
 
-function start(vertices, colors) {
-  log('passed in ' + vertices.length);
-  log('passed in ' + colors.length);
+function start() {
   canvas = document.getElementById("glcanvas");
   
   initWebGL(canvas);
@@ -28,8 +25,6 @@ function start(vertices, colors) {
     
     initShaders();
     
-    initBuffers(vertices, colors);
-    
     canvas.onmousedown = handleMouseDown;
     document.onmouseup = handleMouseUp;
     document.onmousemove = handleMouseMove;
@@ -39,6 +34,14 @@ function start(vertices, colors) {
     setInterval(drawScene, 15);
   }
 }
+
+function addModelData(model) {
+  if (model.vertices && model.vertices.length>0) {
+    models.push(model);
+    initBuffers(model);
+  }
+}
+
 
 function initWebGL() {
   gl = null;
@@ -122,16 +125,14 @@ window.onmousewheel = document.onmousewheel = wheel;
 
 var vertsl;
 
-function initBuffers(vertices, colors) {
-  vertsl = vertices.length;
-  
-  squareVerticesBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-  
-  squareVerticesColorBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesColorBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+function initBuffers(model) {
+  model.squareVerticesBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, model.squareVerticesBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(model.vertices), gl.STATIC_DRAW);
+
+  model.squareVerticesColorBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, model.squareVerticesColorBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(model.colors), gl.STATIC_DRAW);
 }
 
 ////////////////////////////////////////////////////
@@ -140,7 +141,7 @@ function drawScene() {
   perspectiveMatrix = makePerspective(45, 1000.0 / 700.0, 0.01, 3000.0);
 
   loadIdentity();
-  mvTranslate([0.0, 1.0, -11.0]);
+  mvTranslate([0.0, 1.0, -15.0]);
   multMatrix(posMatrix);
   multMatrix(moonRotationMatrix);
   
@@ -151,21 +152,22 @@ function drawScene() {
     var n = 0;
   }
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesBuffer);
-  gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
-  
-  gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesColorBuffer);
-  gl.vertexAttribPointer(vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
-  
   setMatrixUniforms();
 
   setTimeUniform();
 
-  if (options.renderType == 'lines') {
-    gl.drawArrays(gl.LINES, 0, vertsl / 6);
-  } else {  
-    gl.drawArrays(gl.POINTS, 0, vertsl / 3);
+  for (var i = 0; i < models.length; i++) {
+    var model = models[i];
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, model.squareVerticesBuffer);
+    gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, model.squareVerticesColorBuffer);
+    gl.vertexAttribPointer(vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
+
+    gl.drawArrays(gl.POINTS, 0, model.vertices.length / 3);
   }
+
 }
 //////////////////////////////////////////////////
 
