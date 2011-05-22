@@ -236,13 +236,10 @@ function TAG_Byte_Array(nbtreader) {
   this.read = function() {
     var type = 1;
     var length = makeint(this.reader.readBytes(4));
-    var arr = [];
     var tag = null;
-    for (var i=0; i<length; i++) {
-      tag = this.reader.read(type, '_'+i.toString());
-      arr.push(tag);
-    }
-    return arr;
+    var ret = this.reader.data.slice(this.reader.position, this.reader.position + length - 1);
+    this.reader.position += length;
+    return ret;
   };
 
   this.decode = function() {

@@ -10,6 +10,6 @@ $levelfile = $wd.'/world/level.dat';
 
 header("Content-Encoding: gzip");
 
-jsonchunkout($levelfile);
+jsonFileOut($levelfile);
 
 ?>

@@ -1,55 +1,55 @@
 <?php
 ini_set('display_errors', true);
 
-/* return the value of the most significant bit */
-function get_ms1bit(/*int*/ $i)
-{
-    $x = 0;
-    for ($j = $i; $i && !($j == 1); $j >>= 1) { $x++; }
-    return $i ? $j <<= $x: 0;
-}
+$wf = $_SERVER['SCRIPT_FILENAME'];
+$pos = strrpos($wf, '/');
+$wd = substr($wf, 0, $pos);
 
-function readint($str, $name) {
-  $pos = strpos($str, $name);
+$CHUNK_DIR = $wd . '/chunks/';
+$REGION_DIR = $wd . '/world/region/';
 
-  if ($pos === false) return -9999;
+function floormod($a, $b) { return (($a % $b) + $b) % $b; }
 
-  $datx = substr($str, $pos+4, 4);
+function readChunk($posx, $posz) {
+  global $REGION_DIR;
 
-  $dat = unpack('C*', $datx);
-  
-  if (get_ms1bit($dat[4]) == 128) 
-    $isnegative = true;
-  else
-    $isnegative = false;
-  
-  $Number = ($dat[1]<<24) | ($dat[2]<<16) | ($dat[3]<<8) | ($dat[4]);
+  // calculate region file to read
+  $regionX = floor($posx / 32);
+  $regionZ = floor($posz / 32);
 
-  if ($isnegative) {
-    $Number = -(pow(2, 32) - $Number);
+  // open region file, seek to header info
+  $file = gzopen($REGION_DIR . "r.$regionX.$regionZ.mcr", 'r');
+
+  $chunkHeaderLoc = 4 * (floormod($posx, 32) + floormod($posz, 32) * 32);
+  gzseek($file, $chunkHeaderLoc);
+  $info = unpack('C*', gzread($file, 4));
+  $chunkDataLoc = ($info[1]<<16)|($info[2]<<8)|($info[3]);
+
+  // if chunk hasn't been generated, return empty
+  if($chunkDataLoc == 0) {
+    return array();
   }
+  
+  // seek to data, write to gz and return
+  gzseek($file, $chunkDataLoc * 4096);
+  $info = unpack('C*', gzread($file, 4));
+  $chunkLength = ($info[1]<<32)|($info[2]<<16)|($info[3]<<8)|($info[4]);
+  
+  // read to skip over compression byte
+  gzread($file, 1);
 
-  return $Number;
+  // skip first two bytes for deflate
+  gzread($file, 2);
+  // leave off last four bytes for deflate
+  $chunkLength -= 4;
+
+  $contents = gzread($file, $chunkLength - 1);
+  $contents = gzinflate($contents);
+  $data = array_merge(unpack("C*", $contents));
+  return $data;
 }
 
-function readchunk($path) {
-  $zd = gzopen($path, "r");
-  $contents = gzread($zd, 9990000);
-  gzclose($zd);
-
-  $ret = array();
-  $xpos = readint($contents, 'xPos');
-  if ($xpos!=-9999) {
-    $ret['xpos'] = $xpos;
-    $ret['zpos'] = readint($contents,'zPos');
-
-    return $ret;
-  } else {
-    return null;
-  }
-}
-
-function jsonchunkout($path) {
+function jsonFileOut($path) {
   if (file_exists($path.'.json.gz')) {
     echo file_get_contents($path.'.json.gz');
     return true;
@@ -71,11 +71,24 @@ function jsonchunkout($path) {
   }
 }
 
+function jsonChunkOut($posx, $posz) {
+  global $CHUNK_DIR;
+  $chunkFile = $CHUNK_DIR . "c.$posx.$posz.json.gz";
+  if(file_exists($chunkFile)) {
+    echo file_get_contents($chunkFile);
+    return true;
+  } else {
+    $chunkData = readChunk($posx, $posz);
 
-//if ($argv[1]) {
-// echo 'reading chunk ' . $argv[1] . "\r\n";
-// var_dump(readchunk($argv[1])) . "\r\n";
-//}
+    $gz = gzencode(json_encode($chunkData));
 
+    $cf = fopen($chunkFile, 'wb');
+    fwrite($cf, $gz);
+    fclose($cf);
 
+    echo $gz;
+
+    return true;
+  }
+}
 ?>

@@ -5,6 +5,7 @@
 //requires blockinfo
 
 var theworld;
+
 var ChunkSizeY = 128;
 var ChunkSizeZ = 16;
 var ChunkSizeX = 16;
@@ -16,43 +17,7 @@ var maxz = 4;
 var ymin = 5;
 var filled = [];
 
-function b36(n) {
-  var r = "";
-  
-  if (n == 0) 
-    r = '0';
-  else 
-    if (n < 0) 
-      r = '-' + baseConverter(Math.abs(n), 10, 36);
-    else 
-      r = baseConverter(n, 10, 36);
-  r = r.toLowerCase();
-  return r;
-}
-
-function posfolder(pos) {
-  var n = new Number(pos);
-  r = b36(n.mod(64));
-  return r;
-}
-
-function chunkfilename(x, z) {
-  return 'c.' + b36(x) + '.' + b36(z) + '.dat';
-}
-
-function chunkfile(x, z) {
-  return posfolder(x) + '/' + posfolder(z) + '/' + chunkfilename(x, z);
-/*
-  for (var i=0; i< theworld.chunkIndex.length; i++) {
-    var ch = theworld.chunkIndex[i];
-    var dat = ch.dat;
-    if (!dat) {
-      continue;
-    } else if (dat['xpos']==x && dat['zpos']==z) return ch.filename;
-  }
-  return 'unindexed';
-*/
-}
+var countChunks = 0;
 
 function transNeighbors(blocks, x, y, z) {
   for (i = x - 1; i < x + 2 & i < ChunkSizeX; i++) {
@@ -80,27 +45,21 @@ function extractChunk(blocks, chunk) {
     for (z = 0; z < ChunkSizeZ; z++) {
       for (y = ymin; y < ChunkSizeY; y++) {
         var blockID = blocks[y + (z * ChunkSizeY + (x * ChunkSizeY * ChunkSizeZ))];
+        if(!blockID) blockID = 0;
         var blockType = blockInfo['_-1'];
         blockID = '_' + blockID.toString();
          
         if (blockInfo[blockID]) {
           blockType = blockInfo[blockID];
-        }
-        else {
-        
+        } else {
           blockType = blockInfo['_-1'];
           log('unknown block type ' + blockID);
         }
         var show = false;
         
-        //if ((y>64) & blockType.id ===1) 
-        //  show = true;
-        
-    
         if (blockType.id !== 0) show = transNeighbors(blocks, x, y, z);
         
         if (show) {
-
           addBlock([x,y,z], chunk);
         }
         
@@ -110,7 +69,6 @@ function extractChunk(blocks, chunk) {
   countChunks++;
   renderChunk(chunk);
 }
-
 
 function addBlock(position, chunk) {
   var verts = [
@@ -149,14 +107,12 @@ function renderLines(chunk) {
   }
 }
 
-
 function renderPoints(chunk) {
   for (var i=0; i<chunk.filled.length; i++) {
     var verts = chunk.filled[i];
     renderVoxelPoints(chunk, verts[0], verts[1], verts[2]);
   }
 }
-
 
 function getBlockType(blocks, x, y, z) {
   var blockType = blockInfo['_-1'];
@@ -227,18 +183,19 @@ function addLine(p1, p2, chunk) {
   theworld.colors.push(c2[1]);
   theworld.colors.push(c2[2]);
   theworld.colors.push(c2[3]);
-
 }
 
-
-function parsechunk(data, pos) {
+function parseChunk(data, pos) {
   if (data) {
     var dat = JSON.parse(data);
+    var c = Object();
+    c.pos = pos;
+    if(!dat || dat.length == 0) {
+      return c;
+    }
     var nbt = new NBTReader(dat);
     var ch = nbt.read();
     var blocks = ch.root.Level.Blocks;
-    var c = Object();
-    c.pos = pos;
     extractChunk(blocks, c);
     theworld.chunks.push(c);
     $('body').trigger({
@@ -247,38 +204,21 @@ function parsechunk(data, pos) {
     });
     return c; 
   }
-/*
-  var blocks = tagfixed(data, 'Blocks', 32768);
-  var c = Object();
-  c.pos = pos;
-  extractChunk(blocks, c);
-  theworld.chunks.push(c);* /
-
-  return c; */
 }
 
-function chunkload(url, pos, callback) {
-  log('loading chunk pos=' + JSON.stringify(pos));
-  var fl = chunkfile(pos.x, pos.z);
-  if (fl != 'unindexed') {
-          var loc = url + 'getchunk.php?file=/' + 
-              encodeURIComponent(fl);
-          $.ajax({
-            url: loc,
-            dataType: 'html',
-            type: 'GET',
-            success: function(data) {
-              callback(theworld, parsechunk(data, pos));
-            },
-            error: function() {
-              callback(theworld, null);
-            }
-          });
-  } else {
-    callback(theworld, null);
-  }
+function chunkLoad(url, pos, callback) {
+  $.ajax({
+    url: url + 'getchunk.php?posx=' + pos.x + '&posz=' + pos.z,
+    dataType: 'html',
+    type: 'GET',
+    success: function(data) {
+      callback(theworld, parseChunk(data, pos));
+    },
+    error: function() {
+      callback(theworld, null);
+    }
+  });
 }
-
 
 function nextChunk(pos) {
   var next = new Object();
@@ -287,9 +227,7 @@ function nextChunk(pos) {
     next.x = pos.x + 1;
     next.z = pos.z;
     next.cont = true;
-  }
-  else {
-  
+  } else {
     if (pos.z < maxz) {
       next.z = pos.z + 1;
       next.x = minx;
@@ -299,19 +237,15 @@ function nextChunk(pos) {
   return next;
 }
 
-var countChunks = 0;
-
 function loadArea() {
   var w = this;
-  
-  chunkload(theworld.url, theworld.pos, function(chunk) {
-    var c = theworld.chunks[0];
+ 
+  chunkLoad(theworld.url, theworld.pos, function(chunk) {
     if (countChunks % 2 === 0) msg('loaded chunk at ' + theworld.pos.x + ', ' + theworld.pos.z);
     theworld.pos = nextChunk(theworld.pos);
     if (theworld.pos.cont) {
       theworld.loadArea();
-    }
-    else {
+    } else {
       status('loaded ' + countChunks + ' chunks &nbsp; &nbsp; &nbsp; LIKE A BOSS');
       $('#trace').animate({
         height: 'toggle'
@@ -320,7 +254,6 @@ function loadArea() {
     }
   });
 }
-
 
 function World(url, index) {
   this.url = url;
@@ -340,27 +273,27 @@ World.prototype.init = function(cb) {
   
   convertColors(); // in blockinfo.js
   w = this;
-  status("Loading..");
+  status("Loading...");
     
   $.get('getlevel.php', function(data) {
-     msg("Loaded level.dat");
-     var arr = JSON.parse(data);
-     var nbtreader = new NBTReader(arr);
-     var tmp = nbtreader.read();
-     w.level = tmp.root.Data;
-     msg('_______________');
-     msg('PlayerX = ' + w.level.Player.Pos[0]);
-     msg('PlayerZ = ' + w.level.Player.Pos[2]);
-     var posx = Math.round(w.level.Player.Pos[0] / ChunkSizeX);
-     var posz = Math.round(w.level.Player.Pos[2] / ChunkSizeZ);
-     msg('posx = ' + posx.toString());
-     msg('posz = ' + posz.toString()); 
-     $('#xmin').val(posx - 12);
-     $('#xmax').val(posx + 12);
-     $('#zmin').val(posz - 12);
-     $('#zmax').val(posz + 12);
-     w.chunks = [];
-     cb(theworld);
+    msg("Loaded level.dat");
+    var arr = JSON.parse(data);
+    var nbtreader = new NBTReader(arr);
+    var tmp = nbtreader.read();
+    w.level = tmp.root.Data;
+    msg('_______________');
+    msg('PlayerX = ' + w.level.Player.Pos[0]);
+    msg('PlayerZ = ' + w.level.Player.Pos[2]);
+    var posx = Math.round(w.level.Player.Pos[0] / ChunkSizeX);
+    var posz = Math.round(w.level.Player.Pos[2] / ChunkSizeZ);
+    msg('posx = ' + posx.toString());
+    msg('posz = ' + posz.toString()); 
+    $('#xmin').val(posx - 3);
+    $('#xmax').val(posx + 3);
+    $('#zmin').val(posz - 3);
+    $('#zmax').val(posz + 3);
+    w.chunks = [];
+    cb(theworld);
   });
 };
 
