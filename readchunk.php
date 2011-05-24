@@ -93,8 +93,18 @@ function jsonChunkOut($posx, $posz) {
   }
 }
 
-function jsonMultipleOut($list) {
-  global $CHUNK_DIR;
+function jsonMultipleOut($liststr) {
+  global $CHUNK_DIR;  
+
+  $key = md5($liststr);
+  $combfile = $CHUNK_DIR. $key. '.json.gz';
+
+  if (file_exists($combfile)) {
+    echo file_get_contents($combfile);
+    return true;
+  }
+     
+  $list = json_decode($liststr);
   $combined = array();
   $count = count($list);
   for ($i=0; $i<$count; $i++) {
@@ -116,6 +126,10 @@ function jsonMultipleOut($list) {
   }
   $gz = gzencode(json_encode($combined));
   echo $gz;
+  $ccf = fopen($combfile, 'wb');
+  fwrite($ccf, $gz);
+  fclose($ccf);
+
   return true;
 }
 

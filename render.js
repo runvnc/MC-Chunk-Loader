@@ -21,6 +21,8 @@ function start() {
     gl.clearColor(0.0, 0.0, 0.0, 1.0); 
     gl.clearDepth(1.0); 
     gl.enable(gl.DEPTH_TEST); 
+    gl.enable(0x0B10);
+    gl.enable(0x8642);
     gl.depthFunc(gl.LEQUAL); // Near things obscure far things
     
     initShaders();

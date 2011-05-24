@@ -16,15 +16,10 @@ function main() {
   });
   
   $('#load').click(function() {
-    minx = $('#xmin').val()*1;
-    minz = $('#zmin').val()*1;
-    maxx = $('#xmax').val()*1;
-    maxz = $('#zmax').val()*1;
     ymin = $('#ymin').val()*1;
 
-    theworld.pos.x = new Number(minx);
-    theworld.pos.z = new Number(minz);
-    //viewer.world.loadArea();
+    theworld.pos.x = $('#x').val()*1;
+    theworld.pos.z = $('#z').val()*1;
     start();
     viewer.world.createWorkers();
     

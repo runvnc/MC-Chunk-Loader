@@ -10,6 +10,7 @@ var ChunkSizeY = 128;
 var ChunkSizeZ = 16;
 var ChunkSizeX = 16;
 var cores = 4;
+var chunksAcross = 4;
 
 var minx = -4;
 var minz = -4;
@@ -223,41 +224,40 @@ function chunkLoad(url, pos, callback) {
   });
 }
 
+var loadRadius = 1;
+var maxLoadRadius = 40;
+
 function nextChunk(pos) {
+  var maxx = loadRadius + theworld.pos.x;  
+  var minx = theworld.pos.x - loadRadius;
+  var maxz = loadRadius + theworld.pos.z;
+  var minz = theworld.pos.z - loadRadius;
+
   var next = new Object();
   next.cont = false;
   if (pos.x < maxx) {
-    next.x = pos.x + 1;
+    next.x = pos.x + chunksAcross;
     next.z = pos.z;
     next.cont = true;
   } else {
     if (pos.z < maxz) {
-      next.z = pos.z + 1;
+      next.z = pos.z + chunksAcross;
       next.x = minx;
       next.cont = true;
+    } else {
+      loadRadius++;
+      msg('Load radius: ' + loadRadius + ' of ' + maxLoadRadius);
+      if (loadRadius<maxLoadRadius) {
+        next.x = minx-chunksAcross;
+        next.z = minz-chunksAcross;
+        next.cont = true;
+        return next;
+      } else {
+        msg('Done.');
+      }
     }
   }
   return next;
-}
-
-function loadArea() {
-  var w = this;
- 
-  chunkLoad(theworld.url, theworld.pos, function(chunk) {
-    if (countChunks % 2 === 0) msg('loaded chunk at ' + theworld.pos.x + ', ' + theworld.pos.z);
-    addModelData(chunk);
-    theworld.pos = nextChunk(theworld.pos);
-    if (theworld.pos.cont) {
-      theworld.loadArea();
-    } else {
-      status('loaded ' + countChunks + ' chunks &nbsp; &nbsp; &nbsp; LIKE A BOSS');
-      $('#trace').animate({
-        height: 'toggle'
-      });
-      addModelData(theworld);
-      start(theworld.vertices, theworld.colors);
-    }
-  });
 }
 
 var numloaded = 0;
@@ -280,12 +280,11 @@ var numloaded = 0;
           console.log('worker error:');
           console.log(obj.data);
         } else if (obj.type=='msg') {
-          msg(obj.data);
+          console.log(obj.data);
         }
       }
       
-      worker.postMessage({type:'init', url:this.url.href, mminx:minx, mmaxx:maxx,
-                          mminz:minz, mmaxz:maxz});
+      worker.postMessage({type:'init', url:this.url.href});
     }
     console.log('done creating workers');
     return true;
@@ -305,6 +304,27 @@ function nextWorker() {
 var l = 0;
 var pos;
 var loading = false;
+var alreadyLoaded = {};
+
+function bigChunk(x,z) {
+  var x1 = Math.floor(x / chunksAcross) * chunksAcross;
+  var z1 = Math.floor(z / chunksAcross) * chunksAcross;
+  var key = x1.toString() + ','+ z1.toString();
+  if (!alreadyLoaded[key]) {
+    var positions = [];
+    for (var a=x1; a<x1+chunksAcross; a++) {
+      for (var b=z1; b<z1+chunksAcross; b++) {
+        positions.push({x:a, z:b});
+      }
+    }
+    return positions;
+    alreadyLoaded[key] = true;
+  } else {
+    return [];
+  } 
+}
+
+var wasLoaded = {};
 
 function loadAll() {
   var tot = (maxx - minx) * (maxz-minz);
@@ -312,32 +332,50 @@ function loadAll() {
   loading = true;
   theworld.pos.cont = true;
   var positions = [];
-  if (!pos) pos = theworld.pos;
+  if (!pos) { 
+    pos = theworld.pos;
+    maxx = loadRadius + theworld.pos.x;
+    minx = theworld.pos.x - loadRadius;
+    maxz = loadRadius + theworld.pos.z;
+    minz = theworld.pos.z - loadRadius;
+  }
   var worker = nextWorker();
-  for (var n=0; n<12; n++) { 
-    if (pos.cont) {
-      if (l==0) {
-        pos = nextChunk(theworld.pos);
-      } else {
-        pos = nextChunk(pos);
-      }
-      positions.push({x:pos.x, z: (pos.z*1)});
-      toload++;
+  var tot = pos.x + pos.z;
+  var inc = 0;
+  var key = 'i';
+  wasLoaded[key] = true;
+  while (pos.cont && positions.length==0 && inc==0 &&
+         wasLoaded[key]) {
+    if (l==0) {
+      pos = nextChunk(theworld.pos);
     } else {
-    
+      pos = nextChunk(pos);
+    }
+    positions = bigChunk(pos.x, pos.z);
+    key = JSON.stringify(positions);
+    if (positions.length>0) {
+      inc++;
     }
   }
+
   if (positions.length == 0) {
     msg('Loading..');
+    loading = false;
     return;
   }
-  
-  var dat = {positions:positions,minx:minx,maxx:maxx,minz:minz,maxz:maxz,ymin:ymin};
-  worker.postMessage({type:'loadpos', data:dat});
-  setTimeout('viewer.world.loadAll()', 10);
 
-  l++;
-  loading = false;
+  if (wasLoaded[key]) {
+    loading = false;
+    setTimeout('viewer.world.loadAll()',1);
+    return;
+  } else { 
+    var dat = {positions:positions,minx:minx,maxx:maxx,minz:minz,maxz:maxz,ymin:ymin};
+    wasLoaded[key] = true;
+    worker.postMessage({type:'loadpos', data:dat});
+    setTimeout('viewer.world.loadAll()', 1);
+    l++;
+    loading = false;
+  }
 }
 
 
@@ -372,13 +410,12 @@ World.prototype.init = function(cb) {
     msg('PlayerZ = ' + w.level.Player.Pos[2]);
     var posx = Math.round(w.level.Player.Pos[0] / ChunkSizeX);
     var posz = Math.round(w.level.Player.Pos[2] / ChunkSizeZ);
+    $('#x').val(posx);
+    $('#z').val(posz);
+    w.pos = {x:posx, z:posz};
     msg('posx = ' + posx.toString());
     msg('posz = ' + posz.toString()); 
-    $('#xmin').val(posx - 24);
-    $('#xmax').val(posx + 24);
-    $('#zmin').val(posz - 24);
-    $('#zmax').val(posz + 24);
-    
+     
     w.chunks = [];
     cb(theworld);
   });
