@@ -4,7 +4,8 @@ other demo video: http://vimeo.com/16156993
 Interesting but completely unrelated music video: http://www.youtube.com/watch?v=tVoH6ZTDrD0&feature=related
 
 Requires: Apache configuration, PHP with zlib (php5-zlib), WebGL-enabled browser,
-save tree in [wwwroot]/world/ , writable world/ tree (chmod -R 777 world)
+save tree in [wwwroot]/world/ , writable world/ tree (chmod -R 777 world) 
+NEW REQUIREMENT: writable chunks/ folder!!
 
 http://www.php.net/manual/en/zlib.installation.php
 
